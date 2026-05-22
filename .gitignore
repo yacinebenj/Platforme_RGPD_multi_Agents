@@ -1,0 +1,35 @@
+# Secrets
+key.env
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Editor / local settings
+.vscode/
+.idea/
+
+# Logs and runtime files
+*.log
+uvicorn*.log
+ui_uvicorn*.log
+
+# Temporary files
+.tmp_*
+.edge-ui-test/
+
+# Local DB transient files
+*.db-shm
+*.db-wal
+
+# Generated screenshots / local audits
+pw_*.png
+

@@ -1,0 +1,140 @@
+"""Seed examples for advisory field classification.
+
+These examples train the ML sidecar to explain field semantics. They do not
+decide RGPD applicability by themselves.
+"""
+
+FIELD_LABELS = {
+    "identity": "Identite",
+    "contact": "Coordonnees",
+    "address": "Adresse / localisation",
+    "identity_document": "Piece d identite",
+    "professional": "Donnees professionnelles",
+    "sensitive": "Donnees sensibles",
+    "organization": "Organisation / societe",
+    "technical": "Technique / systeme",
+    "non_personal": "Non personnel",
+    "ambiguous": "Ambigu",
+}
+
+
+SEED_FIELD_CASES = [
+    # Identity
+    {"field": "FirstName", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "LastName", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "FullName", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "SerialNumberFullName", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "ContactName", "module": "customers", "source_system": "qalitas", "label": "identity"},
+    {"field": "ContactFirstName", "module": "customers", "source_system": "qalitas", "label": "identity"},
+    {"field": "ContactLastName", "module": "customers", "source_system": "qalitas", "label": "identity"},
+    {"field": "TechnicianName", "module": "technicians", "source_system": "gmao", "label": "identity"},
+    {"field": "TechnicianFullName", "module": "technicians", "source_system": "gmao", "label": "identity"},
+    {"field": "Nom", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "Prenom", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "DisplayName", "module": "employees", "source_system": "qalitas", "label": "identity"},
+    {"field": "Civility", "module": "customers", "source_system": "qalitas", "label": "identity"},
+    {"field": "CivilityStr", "module": "customers", "source_system": "gmao", "label": "identity"},
+
+    # Contact
+    {"field": "Email", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "SecondEmail", "module": "employees", "source_system": "qalitas", "label": "contact"},
+    {"field": "SiegeEmail", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "BillingEmail", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "FactoryEmail", "module": "suppliers", "source_system": "qalitas", "label": "contact"},
+    {"field": "DeliveryEmail", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "Phone", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "Telephone", "module": "customers", "source_system": "gmao", "label": "contact"},
+    {"field": "Mobile", "module": "employees", "source_system": "qalitas", "label": "contact"},
+    {"field": "Fax", "module": "suppliers", "source_system": "qalitas", "label": "contact"},
+    {"field": "HomeTelephoneNumber", "module": "employees", "source_system": "qalitas", "label": "contact"},
+    {"field": "BillingPhoneNumber", "module": "customers", "source_system": "qalitas", "label": "contact"},
+    {"field": "SiegePhoneNumber", "module": "customers", "source_system": "qalitas", "label": "contact"},
+
+    # Address and location
+    {"field": "Address", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "Adresse", "module": "customers", "source_system": "gmao", "label": "address"},
+    {"field": "City", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "Ville", "module": "customers", "source_system": "gmao", "label": "address"},
+    {"field": "ZipCode", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "PostalCode", "module": "customers", "source_system": "gmao", "label": "address"},
+    {"field": "SiegeAddress", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "SiegeCity", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "DeliveryAddress", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "BillingAddress", "module": "customers", "source_system": "qalitas", "label": "address"},
+    {"field": "Latitude", "module": "interventions", "source_system": "gmao", "label": "address"},
+    {"field": "Longitude", "module": "interventions", "source_system": "gmao", "label": "address"},
+    {"field": "GPSLocation", "module": "interventions", "source_system": "gmao", "label": "address"},
+    {"field": "Geolocation", "module": "interventions", "source_system": "gmao", "label": "address"},
+
+    # Identity documents
+    {"field": "Cin", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "CinIssued", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "CinIssuedTo", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "CinAdresse", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "Passport", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "PassportNumber", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+    {"field": "NationalId", "module": "employees", "source_system": "gmao", "label": "identity_document"},
+    {"field": "RegistrationNumber", "module": "employees", "source_system": "qalitas", "label": "identity_document"},
+
+    # Professional context
+    {"field": "DepartmentId", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "DepartmentCode", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "DepartmentDesignation", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "DepartmentCompletDesignation", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "JobTitle", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "Function", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "EmployeeCode", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "CertificateNom", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "CertificateEmail", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "SharedWith", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "SharedWithNames", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "Matricule", "module": "employees", "source_system": "qalitas", "label": "professional"},
+    {"field": "Habilitation", "module": "employees", "source_system": "qalitas", "label": "professional"},
+
+    # Sensitive examples
+    {"field": "HealthStatus", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "MedicalData", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "Disability", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "AccidentData", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "Fingerprint", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "FaceData", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "BiometricData", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "Religion", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "PoliticalOpinion", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "UnionMembership", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "DonneesSante", "module": "employees", "source_system": "qalitas", "label": "sensitive"},
+    {"field": "BloodType", "module": "employees", "source_system": "gmao", "label": "sensitive"},
+
+    # Organization-only examples
+    {"field": "Designation", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "FullDesignation", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "CompanyName", "module": "companies", "source_system": "qalitas", "label": "organization"},
+    {"field": "CompanyId", "module": "customers", "source_system": "gmao", "label": "organization"},
+    {"field": "CategoryDesignation", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "TypesDesignation", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "Sector", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "Nature", "module": "customers", "source_system": "gmao", "label": "organization"},
+    {"field": "MatriculeFiscale", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "FiscalNumber", "module": "suppliers", "source_system": "gmao", "label": "organization"},
+    {"field": "WebSite", "module": "customers", "source_system": "gmao", "label": "organization"},
+    {"field": "Website", "module": "customers", "source_system": "gmao", "label": "organization"},
+    {"field": "ExpLocStr", "module": "customers", "source_system": "gmao", "label": "organization"},
+
+    # Technical or non-personal examples
+    {"field": "Id", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "CreatedDate", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "UpdatedDate", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "CreatedBy", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "UpdatedBy", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "IsEnabled", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "IsActive", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "RowVersion", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "CrudFrom", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "CurrentUserId", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "Code", "module": "all", "source_system": "gmao", "label": "non_personal"},
+    {"field": "InternalReference", "module": "all", "source_system": "qalitas", "label": "non_personal"},
+    {"field": "Number", "module": "all", "source_system": "gmao", "label": "non_personal"},
+    {"field": "S", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "E", "module": "all", "source_system": "qalitas", "label": "technical"},
+    {"field": "H", "module": "all", "source_system": "qalitas", "label": "technical"},
+]

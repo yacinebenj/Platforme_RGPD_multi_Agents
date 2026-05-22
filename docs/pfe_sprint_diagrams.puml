@@ -1,0 +1,314 @@
+'
+' PlantUML diagrams for the PFE report
+' One use case diagram and one sequence diagram for each sprint
+' Scope: what the DPO actually does in the platform
+'
+
+@startuml Sprint1_UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor DPO
+
+rectangle "Plateforme RGPD - Sprint 1\nAnalyse de conformite et gestion des risques" {
+  usecase "Analyser un traitement\nRGPD" as UC_S1_MAIN1
+  usecase "Evaluer le risque\nd'un traitement" as UC_S1_MAIN2
+  usecase "Declarer un incident\nde donnees" as UC_S1_MAIN3
+
+  usecase "Consulter la cartographie\nautomatique des donnees" as UC_S1_1
+  usecase "Valider ou corriger\nles traitements detectes" as UC_S1_2
+  usecase "Consulter le score de\nconformite et les ecarts" as UC_S1_3
+  usecase "Verifier les bases\nlegales proposees" as UC_S1_4
+  usecase "Exporter le registre\nRGPD" as UC_S1_5
+  usecase "Consulter la matrice\ndes risques" as UC_S1_6
+  usecase "Consulter la decision\nAIPD" as UC_S1_7
+  usecase "Consulter le dossier\nincident / notification" as UC_S1_8
+}
+
+DPO --> UC_S1_MAIN1
+DPO --> UC_S1_MAIN2
+DPO --> UC_S1_MAIN3
+
+UC_S1_MAIN1 .> UC_S1_1 : <<include>>
+UC_S1_MAIN1 .> UC_S1_2 : <<include>>
+UC_S1_MAIN1 .> UC_S1_3 : <<include>>
+UC_S1_MAIN1 .> UC_S1_4 : <<include>>
+UC_S1_MAIN1 .> UC_S1_5 : <<include>>
+
+UC_S1_MAIN2 .> UC_S1_6 : <<include>>
+UC_S1_MAIN2 .> UC_S1_7 : <<include>>
+
+UC_S1_8 .> UC_S1_MAIN3 : <<extend>>
+@enduml
+
+
+@startuml Sprint1_Sequence
+autonumber
+hide footbox
+skinparam maxMessageSize 80
+scale 1600 width
+actor DPO
+participant "Interface\nWeb" as UI
+participant "FastAPI" as API
+participant "Agent A\nCartographie\nConformite" as A
+participant "RAG\nFAISS" as RAG
+participant "Groq\nLLaMA" as LLM
+participant "Agent B\nRisques\nAIPD\nIncidents" as B
+database "SQLite" as DB
+
+DPO -> UI: Saisir un traitement\net lancer l'analyse RGPD
+UI -> API: POST /analyse
+API -> A: run_agent_a(traitement)
+A -> RAG: Recuperer le contexte juridique
+RAG --> A: Extraits pertinents
+A -> LLM: Completer les champs manquants
+LLM --> A: Donnees structurees
+A -> A: Calculer score,\necarts et bases legales
+A -> DB: Enregistrer cartographie et conformite
+A --> API: q1_cartographie, q2_conformite,\nq3_base_legale, q1_register
+API -> B: run_agent_b(traitement, sortie_agent_a)
+B -> B: Evaluer risques,\ncriticite et AIPD
+B -> DB: Enregistrer risques et incident
+B --> API: q4_risques_aipd, q6_incidents
+API --> UI: Resultats consolides
+UI --> DPO: Afficher score, ecarts,\nbase legale, risques et registre
+
+opt Declaration d'incident
+  DPO -> UI: Declarer un incident
+  UI -> API: POST /incident
+  API -> B: Qualifier l'incident
+  B -> DB: Sauvegarder dossier incident
+  B --> API: Niveau de risque et notification
+  API --> UI: Dossier incident / notification
+end
+@enduml
+
+
+@startuml Sprint2_UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor DPO
+
+rectangle "Plateforme RGPD - Sprint 2\nGestion des droits DSAR" {
+  usecase "Traiter une demande\nDSAR" as UC_S2_MAIN
+  usecase "Enregistrer une demande\nDSAR" as UC_S2_1
+  usecase "Verifier la recevabilite\nde la demande" as UC_S2_2
+  usecase "Consulter les donnees\nretrouvees" as UC_S2_3
+  usecase "Suivre les delais\nJ+15 / J+25 / J+30" as UC_S2_4
+  usecase "Valider la reponse\nofficielle" as UC_S2_5
+  usecase "Consulter le dossier\nDSAR complet" as UC_S2_6
+  usecase "Archiver la preuve\nde traitement" as UC_S2_7
+}
+
+DPO --> UC_S2_MAIN
+
+UC_S2_MAIN .> UC_S2_1 : <<include>>
+UC_S2_MAIN .> UC_S2_2 : <<include>>
+UC_S2_MAIN .> UC_S2_3 : <<include>>
+UC_S2_MAIN .> UC_S2_4 : <<include>>
+UC_S2_MAIN .> UC_S2_5 : <<include>>
+UC_S2_MAIN .> UC_S2_6 : <<include>>
+
+UC_S2_7 .> UC_S2_5 : <<extend>>
+@enduml
+
+
+@startuml Sprint2_Sequence
+autonumber
+actor DPO
+participant "Interface Web" as UI
+participant "FastAPI" as API
+participant "Agent C\nDSAR" as C
+participant "Classifieur DSAR\n(TF-IDF + LogisticRegression)" as ML
+participant "RAG / FAISS" as RAG
+participant "Groq / LLaMA" as LLM
+database "SQLite" as DB
+
+DPO -> UI: Enregistrer une demande DSAR
+UI -> API: POST /dsar
+API -> C: run_agent_c(demande)
+C -> ML: Predire le type de droit
+ML --> C: Prediction consultative
+C -> C: Verifier la recevabilite\net calculer les delais
+C -> DB: Rechercher les donnees du demandeur
+DB --> C: Donnees structurees / historiques
+C -> RAG: Recuperer le contexte juridique utile
+RAG --> C: Articles applicables
+C -> LLM: Generer la reponse officielle
+LLM --> C: Reponse structuree DSAR
+C -> DB: Enregistrer dossier, alertes et preuve
+C --> API: Dossier DSAR, delais, reponse
+API --> UI: Resultats DSAR
+UI --> DPO: Afficher dossier et reponse
+
+opt Validation finale
+  DPO -> UI: Valider la reponse
+  UI -> API: POST /dsar/valider
+  API -> DB: Archiver validation et preuve
+  API --> UI: Confirmation
+end
+@enduml
+
+
+@startuml Sprint3_UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor DPO
+
+rectangle "Plateforme RGPD - Sprint 3\nGouvernance DPO et rapports" {
+  together {
+    usecase "Demander correction" as UC_S3_CORR
+    usecase "Valider le pilotage\nDPO" as UC_S3_MAIN
+    usecase "Consulter alertes de\ngouvernance" as UC_S3_ALERT
+  }
+
+  together {
+    usecase "Consulter le cockpit\nDPO" as UC_S3_1
+    usecase "Consulter le score global\nde conformite" as UC_S3_2
+    usecase "Consulter les priorites\nd'action" as UC_S3_3
+    usecase "Consulter l'etat des\nDSAR et incidents" as UC_S3_4
+    usecase "Consulter les preuves\nde conformite" as UC_S3_5
+    usecase "Consulter les tendances\net snapshots" as UC_S3_6
+    usecase "Exporter la synthese\nde gouvernance" as UC_S3_7
+  }
+
+  UC_S3_CORR -[hidden]down-> UC_S3_MAIN
+  UC_S3_MAIN -[hidden]down-> UC_S3_ALERT
+
+  UC_S3_1 -[hidden]down-> UC_S3_2
+  UC_S3_2 -[hidden]down-> UC_S3_3
+  UC_S3_3 -[hidden]down-> UC_S3_4
+  UC_S3_4 -[hidden]down-> UC_S3_5
+  UC_S3_5 -[hidden]down-> UC_S3_6
+  UC_S3_6 -[hidden]down-> UC_S3_7
+}
+
+DPO --> UC_S3_MAIN
+DPO --> UC_S3_CORR
+DPO --> UC_S3_ALERT
+
+UC_S3_MAIN .> UC_S3_1 : <<include>>
+UC_S3_MAIN .> UC_S3_2 : <<include>>
+UC_S3_MAIN .> UC_S3_3 : <<include>>
+UC_S3_MAIN .> UC_S3_4 : <<include>>
+UC_S3_MAIN .> UC_S3_5 : <<include>>
+
+UC_S3_CORR .> UC_S3_2 : <<include>>
+UC_S3_CORR .> UC_S3_3 : <<include>>
+UC_S3_CORR .> UC_S3_4 : <<include>>
+UC_S3_CORR .> UC_S3_6 : <<include>>
+
+UC_S3_7 .> UC_S3_MAIN : <<extend>>
+UC_S3_ALERT .> UC_S3_MAIN : <<extend>>
+@enduml
+
+
+@startuml Sprint3_Sequence
+autonumber
+actor DPO
+participant "Interface Web" as UI
+participant "FastAPI" as API
+participant "Agent D\nGouvernance DPO" as D
+participant "RAG / FAISS" as RAG
+participant "Groq / LLaMA" as LLM
+database "SQLite" as DB
+
+DPO -> UI: Ouvrir le cockpit DPO
+UI -> API: GET /gouvernance
+API -> D: run_agent_d()
+D -> DB: Charger resultats A, B, C,\nsnapshots et historiques
+DB --> D: Donnees consolidees
+D -> D: Calculer score global,\npriorites et tendance
+D -> RAG: Recuperer contexte juridique utile
+RAG --> D: Extraits RGPD / recommandations
+D -> LLM: Generer le rapport DPO
+LLM --> D: Rapport structure
+D -> DB: Sauvegarder snapshot et preuves
+D --> API: Cockpit, indicateurs, rapport
+API --> UI: Donnees de gouvernance
+UI --> DPO: Afficher cockpit et rapport
+
+opt Export ou consultation des preuves
+  DPO -> UI: Consulter preuves / historique
+  UI -> API: GET /preuves ou /snapshots
+  API -> DB: Charger preuves consolidees
+  DB --> API: Preuves et historique
+  API --> UI: Donnees restituees
+end
+@enduml
+
+
+@startuml Sprint4_UseCase
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor DPO
+
+rectangle "Plateforme RGPD - Sprint 4\nOrchestration multi-agents et tableau de bord" {
+  usecase "Piloter une analyse\nglobale" as UC_S4_MAIN1
+  usecase "Suivre l'execution de\nla plateforme" as UC_S4_MAIN2
+
+  usecase "Soumettre une requete\nglobale" as UC_S4_1
+  usecase "Consulter la reponse\nconsolidee" as UC_S4_2
+  usecase "Consulter le tableau\nde bord global" as UC_S4_3
+  usecase "Suivre les traces\net historiques" as UC_S4_4
+  usecase "Consulter l'etat\nd'execution" as UC_S4_5
+  usecase "Relancer une analyse\nciblee" as UC_S4_6
+}
+
+DPO --> UC_S4_MAIN1
+DPO --> UC_S4_MAIN2
+
+UC_S4_MAIN1 .> UC_S4_1 : <<include>>
+UC_S4_MAIN1 .> UC_S4_2 : <<include>>
+UC_S4_MAIN1 .> UC_S4_3 : <<include>>
+
+UC_S4_MAIN2 .> UC_S4_4 : <<include>>
+UC_S4_MAIN2 .> UC_S4_5 : <<include>>
+
+UC_S4_6 .> UC_S4_MAIN1 : <<extend>>
+@enduml
+
+
+@startuml Sprint4_Sequence
+autonumber
+actor DPO
+participant "Interface Web" as UI
+participant "FastAPI" as API
+participant "Orchestrateur\nLangGraph" as ORCH
+participant "Agent A" as A
+participant "Agent B" as B
+participant "Agent C" as C
+participant "Agent D" as D
+database "SQLite" as DB
+
+DPO -> UI: Soumettre une requete globale
+UI -> API: POST /workflow
+API -> ORCH: invoke(state initial)
+ORCH -> A: Executer Agent A
+A --> ORCH: Sortie A
+ORCH -> B: Executer Agent B
+B --> ORCH: Sortie B
+ORCH -> C: Executer Agent C\nsi demande DSAR presente
+C --> ORCH: Sortie C
+ORCH -> D: Executer Agent D
+D --> ORCH: Sortie D
+ORCH -> DB: Sauvegarder traces,\nsnapshots et resultats
+ORCH --> API: Reponse consolidee
+API --> UI: Tableau de bord / synthese
+UI --> DPO: Afficher vue globale
+
+opt Consultation de l'historique
+  DPO -> UI: Consulter traces ou snapshots
+  UI -> API: GET /history ou /snapshots
+  API -> DB: Charger l'historique
+  DB --> API: Donnees historisees
+  API --> UI: Historique restitue
+end
+@enduml

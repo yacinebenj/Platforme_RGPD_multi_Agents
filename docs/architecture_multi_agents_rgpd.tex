@@ -1,0 +1,126 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{graphicx}
+\usepackage{float}
+
+\begin{document}
+
+\chapter{Conception du systeme}
+\section{Architecture du systeme}
+\subsection{Schema d'architecture multi-agents}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=1.6cm and 2cm,
+    actor/.style={
+        draw, rounded corners=4pt,
+        minimum width=3.8cm, minimum height=1.1cm,
+        align=center, font=\large, fill=green!10
+    },
+    core/.style={
+        draw, rounded corners=6pt,
+        minimum width=5.2cm, minimum height=1.35cm,
+        align=center, font=\large\bfseries, fill=blue!10
+    },
+    agent/.style={
+        draw, rounded corners=5pt,
+        minimum width=5.25cm, minimum height=1.45cm,
+        align=center, font=\large, fill=orange!13
+    },
+    role/.style={
+        draw, rounded corners=4pt,
+        minimum width=5.15cm, minimum height=1.2cm,
+        align=center, font=\normalsize, fill=yellow!12
+    },
+    service/.style={
+        draw, rounded corners=4pt,
+        minimum width=4.1cm, minimum height=1.05cm,
+        align=center, font=\normalsize, fill=gray!12
+    },
+    flow/.style={-{Latex[length=2.5mm]}, thick, blue!65},
+    dataflow/.style={-{Latex[length=2.4mm]}, dashed, line width=0.95pt, gray!95},
+    result/.style={-{Latex[length=2mm]}, thick, orange!80}
+]
+
+% DPO and application entry
+\node[actor] (dpo) at (0, 7.3) {DPO};
+\node[core] (platform) at (0, 5.35) {Plateforme RGPD};
+\node[core] (orchestrator) at (0, 3.25) {Orchestrateur multi-agents};
+
+% Agents around the orchestrator
+\node[agent] (agentA) at (-7.2, 1.2) {Agent A\\Analyse de conformite};
+\node[agent] (agentB) at (7.2, 1.2) {Agent B\\Gestion des risques};
+\node[agent] (agentC) at (-7.2, -3.1) {Agent C\\Gestion des droits DSAR};
+\node[agent] (agentD) at (7.2, -3.1) {Agent D\\Gouvernance DPO};
+
+% What each agent produces
+\node[role] (outA) at (-7.2, -0.65) {Cartographie, ecarts RGPD\\bases legales, recommandations};
+\node[role] (outB) at (7.2, -0.65) {Evaluation des risques\\AIPD, incidents, mesures};
+\node[role] (outC) at (-7.2, -4.95) {Qualification DSAR\\delais, reponse proposee};
+\node[role] (outD) at (7.2, -4.95) {Synthese de gouvernance\\rapport DPO, plan d'actions};
+
+% Shared services and data
+\node[service] (rules) at (-5.2, -7.15) {Moteur de regles\\RGPD};
+\node[service] (knowledge) at (0, -7.15) {Base de connaissances\\juridique};
+\node[service] (generation) at (5.2, -7.15) {Module de generation\\de contenu};
+
+% Data sources
+\node[actor] (sources) at (0, -9.35) {Sources de donnees\\QALITAS, GMAO, documents, e-mails};
+
+% Main user flow
+\draw[flow] (dpo) -- (platform);
+\draw[flow] (platform) -- (orchestrator);
+
+% Orchestration links
+\draw[flow] (orchestrator.west) -- (agentA.east);
+\draw[flow] (orchestrator.east) -- (agentB.west);
+\draw[flow] (orchestrator.south west) -- (agentC.north east);
+\draw[flow] (orchestrator.south east) -- (agentD.north west);
+
+% Agent outputs
+\draw[result] (agentA) -- (outA);
+\draw[result] (agentB) -- (outB);
+\draw[result] (agentC) -- (outC);
+\draw[result] (agentD) -- (outD);
+
+% Agent collaboration
+\draw[dataflow] (agentA.south east) -- node[above, font=\small, fill=white, inner sep=1pt] {resultats conformite} (agentB.south west);
+\draw[dataflow] (agentA.south) |- node[left, font=\small, fill=white, inner sep=1pt] {inventaire} (agentC.north);
+\draw[dataflow] (agentB.south) |- node[right, font=\small, fill=white, inner sep=1pt] {risques et incidents} (agentD.north);
+\draw[dataflow] (agentC.east) -- node[below, font=\small, fill=white, inner sep=1pt] {etat DSAR} (agentD.west);
+
+% Shared services
+\draw[dataflow] (agentA.south) -- (rules.north);
+\draw[dataflow] (agentA.south) -- (knowledge.north);
+\draw[dataflow] (agentA.south) -- (generation.north);
+
+\draw[dataflow] (agentB.south) -- (rules.north);
+\draw[dataflow] (agentB.south) -- (generation.north);
+
+\draw[dataflow] (agentC.south) -- (knowledge.north);
+\draw[dataflow] (agentC.south) -- (generation.north);
+
+\draw[dataflow] (agentD.south) -- (generation.north);
+\draw[dataflow] (agentD.south) -- (knowledge.north);
+
+% Persistence and data sources
+\draw[dataflow] (sources.north) -- (rules.south);
+\draw[dataflow] (sources.north) -- (knowledge.south);
+\draw[dataflow] (sources.north) -- (generation.south);
+
+% Return to DPO
+\draw[flow] (agentD.north) |- (platform.east);
+
+\end{tikzpicture}%
+}
+\caption{Schema d'architecture multi-agents centre sur les agents et leurs responsabilites}
+\label{fig:architecture-multi-agents-rgpd}
+\end{figure}
+
+\end{document}

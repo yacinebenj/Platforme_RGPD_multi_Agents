@@ -1,0 +1,1601 @@
+\documentclass[12pt,a4paper]{report}
+
+% ------------------------------------------------
+% Packages
+% ------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{acronym}
+
+\geometry{margin=2.5cm}
+\onehalfspacing
+
+\definecolor{primary}{RGB}{26, 35, 126}
+\definecolor{lightgray}{RGB}{245, 245, 245}
+
+% ------------------------------------------------
+% En-têtes style "CHAPTER X: Title" avec ligne
+% ------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+
+% Header gauche : "Chapitre X : Titre du chapitre"
+\fancyhead[L]{\small\textbf{\chaptername\ \thechapter\ :\ \leftmark}}
+
+% Pas de header droit
+\fancyhead[R]{}
+
+% Ligne sous l'en-tête
+\renewcommand{\headrulewidth}{0.6pt}
+
+% Numéro de page en bas à droite
+\fancyfoot[R]{\small\thepage}
+\fancyfoot[C]{}
+\fancyfoot[L]{}
+
+% Supprimer la ligne au-dessus du pied de page
+\renewcommand{\footrulewidth}{0pt}
+
+% Style pour les pages de début de chapitre (plain)
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[R]{\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% Forcer leftmark à afficher le titre du chapitre sans majuscules automatiques
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+% ------------------------------------------------
+\begin{document}
+
+% --- Page de Garde ---
+\begin{titlepage}
+\centering
+{\large \textbf{République Tunisienne}} \\
+{\large \textbf{Ministère de l'Enseignement Supérieur et de la Recherche Scientifique}} \\
+{\large \textbf{Université de Tunis}} \\
+\vspace{0.3cm}
+{\LARGE \textbf{Institut Supérieur de Gestion de Tunis}} \\
+\vspace{0.2cm}
+{\normalsize Établissement public d'enseignement supérieur et de recherche} \\
+\vspace{0.8cm}
+\includegraphics[width=5cm]{logo_ministere.png}
+\includegraphics[width=5cm]{logo_isg.jpg}
+\vspace{0.8cm}
+
+{\Large \textbf{RAPPORT DE PROJET DE FIN D'ÉTUDES}} \\
+\vspace{0.3cm}
+{\large Pour l'obtention du diplôme de la Licence Nationale en Informatique de Gestion} \\
+{\large Spécialité : Business Intelligence} \\
+\vspace{1.2cm}
+
+\rule{\linewidth}{0.5mm} \\
+\vspace{0.4cm}
+{\huge \textbf{Conception et Réalisation d'une Plateforme d'Agents IA pour la Conformité RGPD}} \\
+\vspace{0.2cm}
+{\large Application aux logiciels QALITAS WEB et GMAO PRO WEB} \\
+\rule{\linewidth}{0.5mm} \\
+\vspace{0.8cm}
+
+\begin{minipage}{0.45\textwidth}
+\begin{flushleft}
+\large \textbf{Organisme d'accueil :}\\
+TIM --- Technologies Industrielles\\ et Management
+\end{flushleft}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\begin{flushright}
+\large \textbf{Élaboré par :}\\
+Yacine Ben Jemaa
+\end{flushright}
+\end{minipage}
+
+\vspace{0.8cm}
+\begin{flushleft}
+\large \textbf{Encadrant Professionnel :} Mohammed Taieb Ben Romdhane \\
+\textbf{Encadrant Académique :} Ines Meriah
+\end{flushleft}
+\vfill
+{\large Année universitaire : 2025 -- 2026}
+\end{titlepage}
+
+% --- Préambule ---
+\pagenumbering{roman}
+
+\chapter*{Dédicace}
+\addcontentsline{toc}{chapter}{Dédicace}
+
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter*{Liste des abréviations}
+\addcontentsline{toc}{chapter}{Liste des abréviations}
+
+\begin{acronym}[RGPD]
+\acro{RGPD}{Règlement Général sur la Protection des Données}
+\acro{DPO}{Délégué à la Protection des Données}
+\acro{INPDP}{Instance Nationale de Protection des Données Personnelles}
+\acro{QHSE}{Qualité, Hygiène, Sécurité et Environnement}
+\acro{GMAO}{Gestion de la Maintenance Assistée par Ordinateur}
+\acro{IA}{Intelligence Artificielle}
+\acro{LLM}{Large Language Model}
+\acro{RAG}{Retrieval-Augmented Generation}
+\acro{FAISS}{Facebook AI Similarity Search}
+\acro{API}{Application Programming Interface}
+\acro{DSAR}{Data Subject Access Request}
+\acro{AIPD}{Analyse d'Impact relative à la Protection des Données}
+\acro{DPIA}{Data Protection Impact Assessment}
+\acro{CNIL}{Commission Nationale de l'Informatique et des Libertés}
+\acro{EDPB}{European Data Protection Board}
+\acro{TIM}{Technologies Industrielles et Management}
+\acro{PFE}{Projet de Fin d'Études}
+\acro{UML}{Unified Modeling Language}
+\acro{REST}{Representational State Transfer}
+\acro{PDF}{Portable Document Format}
+\end{acronym}
+
+\clearpage
+\pagenumbering{arabic}
+
+% ==================================================
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
+
+La protection des données personnelles constitue aujourd'hui un enjeu central pour les organisations qui traitent des informations relatives à des personnes physiques. Le Règlement Général sur la Protection des Données (RGPD --- UE 2016/679), entré en vigueur en mai 2018, impose un cadre juridique contraignant à l'ensemble des entités concernées, qu'elles soient situées au sein de l'Union européenne ou en dehors de celle-ci dès lors qu'elles traitent des données de résidents européens \cite{rgpd}. En Tunisie, la loi organique n° 2004-63 du 27 juillet 2004 portant sur la protection des données à caractère personnel constitue le cadre légal national, placé sous la supervision de l'Instance Nationale de Protection des Données Personnelles (INPDP) \cite{inpdp}.
+
+Dans ce contexte réglementaire en constante évolution, TIM --- Technologies Industrielles et Management édite deux logiciels de gestion largement déployés : QALITAS WEB, une solution de management QHSE, et GMAO PRO WEB, une solution de gestion de la maintenance assistée par ordinateur. Ces deux systèmes traitent quotidiennement des données personnelles relatives aux employés, techniciens, sous-traitants et clients des organisations clientes, les exposant à des exigences de conformité de plus en plus strictes.
+
+Face à l'insuffisance des processus manuels actuellement en place pour gérer cette conformité, ce projet de fin d'études propose la conception et le développement d'une Plateforme d'Agents IA RGPD, capable d'automatiser l'analyse de conformité, la gestion des risques, le traitement des droits des personnes et la gouvernance globale des données personnelles au sein de QALITAS WEB et GMAO PRO WEB.
+
+Ce rapport est organisé en cinq chapitres : le cadre général du projet, l'analyse et les spécifications des besoins (Sprint 0), puis les sprints de développement 1 à 4 couvrant successivement les agents d'analyse de conformité, la gestion des droits DSAR, les rapports DPO et l'orchestration multi-agents.
+
+% ==================================================
+\chapter{Cadre général du projet}
+
+\section{Introduction}
+
+Ce chapitre présente le cadre général de notre projet. Il décrit l'organisme d'accueil TIM et ses logiciels phares, analyse les processus existants de gestion de la conformité RGPD au sein de QALITAS WEB et GMAO PRO WEB, formule une critique de ces processus et définit la problématique à laquelle notre solution répond.
+
+\section{Présentation de l'organisme d'accueil}
+
+\subsection{TIM --- Technologies Industrielles et Management}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{logo_tim.png}
+\caption{Logo de TIM --- Technologies Industrielles et Management}
+\label{fig:logo_tim}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Fiche d'identité de TIM --- Technologies Industrielles et Management}
+\label{tab:identite_tim}
+\begin{tabularx}{\textwidth}{|>{\bfseries}l|X|}
+\hline
+Raison sociale       & TIM --- Technologies Industrielles et Management \\
+\hline
+Date de création     & 2003 \\
+\hline
+Pays                 & Tunisie \\
+\hline
+Siège social         & [Adresse complète à compléter] \\
+\hline
+Secteur d'activité   & Édition de logiciels de gestion / Conseil en systèmes d'information \\
+\hline
+Effectif             & Une dizaine de collaborateurs (ingénieurs et consultants) \\
+\hline
+Produits phares      & QALITAS WEB, GMAO PRO WEB \\
+\hline
+Marchés              & Tunisie, France, Canada, Maroc \\
+\hline
+Site web             & \url{https://www.tim-tunisie.com} \\
+\hline
+\end{tabularx}
+\end{table}
+
+TIM Tunisie est un organisme multidisciplinaire fondé en 2003, spécialisé dans les domaines du management industriel et de l'ingénierie des systèmes d'information. L'entreprise se distingue par le développement d'applications métier dédiées, offrant une gamme de produits logiciels évolutifs couvrant notamment la gestion de la qualité (QALITAS), la gestion de la maintenance (GMAO PRO) et d'autres solutions complémentaires destinées aux secteurs industriel et tertiaire \cite{tim_site}.
+
+L'équipe de TIM est composée d'une dizaine de collaborateurs, principalement des ingénieurs informatique et des consultants en génie industriel. L'entreprise collabore avec des partenaires locaux et internationaux, notamment en France, au Canada et au Maroc, et se distingue par une approche centrée sur l'intégration de ses solutions dans les processus opérationnels de ses clients, garantissant une adoption rapide et une valeur ajoutée mesurable.
+
+\subsection{Les solutions de l'organisme d'accueil}
+
+Dans le cadre de son activité d'édition logicielle, TIM propose deux solutions principales destinées à la digitalisation et à l'optimisation des processus de gestion. Ces solutions sont conçues pour répondre aux besoins spécifiques des secteurs industriel et tertiaire, et font l'objet d'améliorations continues en fonction des évolutions normatives et réglementaires \cite{tim_site}.
+
+\subsubsection{QALITAS WEB}
+
+QALITAS WEB est la solution phare de TIM, dédiée à la gestion des systèmes de management QHSE (Qualité, Hygiène, Sécurité et Environnement). Conçue pour accompagner les organisations dans leur démarche de certification, elle permet de digitaliser les processus liés à la qualité, à la sécurité au travail et à la gestion environnementale. Elle facilite notamment la conformité aux référentiels internationaux ISO 9001, ISO 45001 et ISO 14001 \cite{qalitas_doc}.
+
+La solution intègre des fonctionnalités avancées telles que la gestion des audits internes et externes, le suivi des indicateurs de performance clés (KPI), la gestion des non-conformités et des actions correctives, ainsi qu'un système de gestion documentaire. Son interface intuitive favorise son adoption par les utilisateurs et permet une intégration fluide avec d'autres systèmes d'information de l'entreprise.
+
+\subsubsection{GMAO PRO WEB}
+
+GMAO PRO WEB est un logiciel de gestion de la maintenance assistée par ordinateur destiné à l'optimisation de la gestion des équipements industriels. Il permet aux organisations de planifier et de suivre les opérations de maintenance préventive et corrective, de gérer les bons de travail, d'assurer le suivi des stocks de pièces de rechange et d'historiser les interventions techniques \cite{gmao_doc}.
+
+Cette solution offre également des capacités d'interfaçage avec des systèmes tiers, facilitant son intégration dans les environnements informatiques existants des entreprises clientes. Elle est particulièrement adaptée aux secteurs industriels à forte intensité d'équipements, où la disponibilité des machines est critique pour la continuité d'activité.
+
+\subsection{Présentation du projet}
+
+Le présent projet a été réalisé au sein du département informatique de TIM, responsable du développement, de la maintenance et de l'évolution des deux logiciels. Ce département assure également une veille technologique et réglementaire active, et se trouve en première ligne face aux exigences croissantes de conformité RGPD formulées par les clients et les autorités compétentes.
+
+\section{Étude de l'existant}
+
+Les deux solutions logicielles de TIM traitent quotidiennement des données personnelles concernant différentes catégories de personnes : employés, techniciens, sous-traitants et clients des organisations utilisatrices. Malgré l'importance de ces traitements, la gestion de la conformité au RGPD reste encore largement manuelle au sein de ces organisations.
+
+Les analyses de conformité sont principalement réalisées à l'aide de questionnaires remplis manuellement par les responsables métiers. Les registres de traitements et la documentation associée sont tenus dans des fichiers bureautiques de type Word ou Excel. Les audits de conformité sont réalisés de manière ponctuelle par des experts externes, et la gestion des incidents de données personnelles repose sur des procédures internes peu formalisées et non automatisées.
+
+Cette approche présente plusieurs limites structurelles. L'analyse de la conformité d'un traitement est longue et consommatrice de ressources. Elle dépend fortement de la disponibilité et de l'expertise des personnes impliquées. Il est difficile d'assurer une surveillance continue dans ces conditions. De plus, le traitement rapide d'un volume élevé d'informations et l'identification proactive des risques liés aux données personnelles deviennent particulièrement complexes à mesure que les organisations clientes se développent.
+
+Face à ces limites, il devient nécessaire de développer une solution capable d'automatiser les analyses de conformité, d'identifier les risques de manière proactive et de centraliser la gouvernance des données personnelles au sein des logiciels de TIM.
+
+\section{Critique de l'existant}
+
+L'analyse des processus actuels de gestion de la conformité RGPD au sein de TIM et de ses logiciels révèle cinq limites structurelles majeures :
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+
+    \item \textbf{Une dépendance excessive aux ressources humaines :} Des tâches répétitives et chronophages --- telles que la mise à jour des registres de traitement ou la vérification manuelle des formulaires de conformité --- mobilisent des ressources qualifiées qui pourraient être affectées à des missions à plus forte valeur ajoutée.
+
+    \item \textbf{Une absence de traçabilité systématique :} L'utilisation de fichiers bureautiques non structurés (Word, Excel) ne garantit pas l'intégrité, la version ni l'auditabilité des documents de conformité. Cette lacune expose TIM et ses clients à des risques significatifs en cas de contrôle réglementaire ou d'audit client.
+
+    \item \textbf{Un risque élevé de non-respect des délais réglementaires :} Le RGPD impose des délais stricts, notamment 72 heures pour la notification des violations de données et 30 jours pour le traitement des demandes d'exercice des droits (DSAR) \cite{rgpd}. En l'absence d'alertes automatiques et de suivi centralisé, le respect de ces délais repose uniquement sur la vigilance humaine.
+
+    \item \textbf{Une déconnexion entre conformité RGPD et processus opérationnels :} Les traitements de données effectués dans QALITAS WEB et GMAO PRO WEB ne sont pas directement liés à une analyse de conformité intégrée. Cette séparation génère des incohérences et des angles morts réglementaires difficiles à détecter sans une revue manuelle exhaustive.
+
+    \item \textbf{Une absence d'outils dédiés à la conformité RGPD :} Ni QALITAS WEB ni GMAO PRO WEB ne disposent d'un module natif permettant de gérer la conformité RGPD. Les organisations clientes sont donc contraintes de recourir à des solutions externes, souvent déconnectées des processus métiers, ce qui crée des redondances et réduit l'efficacité globale du dispositif de conformité.
+
+\end{itemize}
+
+\section{Problématique}
+
+Les systèmes logiciels développés par TIM traitent quotidiennement des données personnelles sensibles, sans disposer d'un mécanisme automatisé permettant d'assurer une conformité continue au RGPD. L'approche actuelle, fondée sur des processus manuels, des outils bureautiques non structurés et des audits ponctuels, ne permet pas de garantir le respect des obligations réglementaires dans des délais acceptables ni d'identifier proactivement les risques liés aux traitements de données. Face à l'évolution des exigences légales et à la complexité croissante des systèmes d'information, il devient impératif de concevoir une solution intelligente, capable d'automatiser l'analyse de conformité, de centraliser la gouvernance des données personnelles et d'assister les responsables dans la prise de décision réglementaire.
+
+\section{Solution proposée}
+
+Pour répondre aux lacunes identifiées, nous proposons la conception et le développement d'une plateforme intelligente multi-agents dédiée à la gestion de la conformité RGPD, intégrée nativement dans les logiciels QALITAS WEB et GMAO PRO WEB de TIM.
+
+La plateforme repose sur une architecture d'agents d'intelligence artificielle spécialisés, chacun responsable d'un domaine précis de la conformité : analyse des traitements de données, détection des écarts réglementaires, évaluation des risques, traitement des demandes d'exercice des droits (DSAR) et pilotage de la gouvernance DPO. Ces agents coopèrent sous la coordination d'un orchestrateur central afin de produire des analyses complètes, des alertes automatiques et des recommandations d'actions correctives.
+
+La solution intègre également un tableau de bord de pilotage permettant au DPO de suivre en temps réel l'état de conformité de l'organisation, de consulter les preuves opposables et de générer des rapports destinés aux audits et aux contrôles réglementaires. L'objectif est de transformer la conformité RGPD d'une contrainte administrative subie en un processus continu, automatisé et pleinement maîtrisé.
+
+\section{Méthodologies de travail}
+
+\subsection{Méthodologies traditionnelles}
+
+Les méthodologies traditionnelles de gestion de projet, regroupées sous l'appellation générique de méthodes séquentielles ou en cascade, reposent sur une décomposition linéaire du projet en phases successives et non chevauchantes. Chaque phase --- analyse des besoins, conception, développement, tests et déploiement --- doit être entièrement achevée avant que la suivante ne commence \cite{royce_waterfall}.
+
+Parmi les méthodologies traditionnelles les plus utilisées, on distingue :
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Waterfall (Cascade) :} Modèle linéaire proposé par Winston Royce en 1970, dans lequel chaque phase suit la précédente sans retour en arrière. Simple à planifier mais inadapté aux projets dont les exigences évoluent en cours de développement \cite{royce_waterfall}.
+    \item \textbf{Cycle en V :} Extension du modèle Waterfall associant à chaque phase de développement une phase de validation symétrique. Ce modèle renforce la qualité des livrables grâce à une vérification systématique à chaque étape \cite{forsberg_v_model}.
+    \item \textbf{Modèle en spirale :} Approche itérative proposée par Barry Boehm en 1986, centrée sur la gestion continue des risques. Le projet est organisé en cycles successifs, chacun comprenant une analyse des risques avant de progresser \cite{boehm_spiral}.
+    \item \textbf{Rational Unified Process (RUP) :} Processus de développement structuré en quatre phases (inception, élaboration, construction, transition), développé par Rational Software (aujourd'hui IBM), avec une forte orientation vers l'architecture logicielle et la documentation \cite{kruchten_rup}.
+\end{itemize}
+
+Ces méthodes offrent l'avantage d'une planification rigoureuse et d'une documentation exhaustive, adaptées à des projets aux exigences stables. Cependant, elles manquent de flexibilité face aux changements et ne favorisent pas l'implication continue du client tout au long du développement.
+
+\subsection{Méthodologies agiles}
+
+Les méthodologies agiles constituent une réponse aux limites des approches traditionnelles. Formalisées par le Manifeste Agile signé en 2001 par dix-sept praticiens du développement logiciel, elles privilégient la collaboration, la livraison itérative de valeur et la capacité d'adaptation aux changements \cite{beck_agile}. Les quatre valeurs fondamentales du Manifeste Agile placent les individus et leurs interactions au-dessus des processus et des outils, le logiciel fonctionnel au-dessus de la documentation exhaustive, la collaboration avec le client au-dessus de la négociation contractuelle, et la réponse au changement au-dessus du suivi d'un plan.
+
+Parmi les méthodologies agiles les plus répandues, on distingue :
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Scrum :} Cadre de travail itératif organisé en sprints de durée fixe (2 à 4 semaines), avec des rôles définis (Product Owner, Scrum Master, équipe de développement) et des cérémonies régulières \cite{schwaber_scrum}.
+    \item \textbf{Kanban :} Méthode visuelle de gestion du flux de travail, originellement développée par Toyota, axée sur la limitation du travail en cours (\textit{Work In Progress}) et la visualisation du flux de valeur \cite{anderson_kanban}.
+    \item \textbf{Extreme Programming (XP) :} Ensemble de pratiques techniques rigoureuses --- développement piloté par les tests (TDD), intégration continue, programmation en binôme --- visant la qualité du code et la réactivité aux exigences changeantes \cite{beck_xp}.
+    \item \textbf{SAFe (Scaled Agile Framework) :} Framework agile à grande échelle conçu pour coordonner plusieurs équipes Scrum au sein de grandes organisations, développé par Scaled Agile Inc. \cite{leffingwell_safe}.
+\end{itemize}
+
+\subsection{Méthodologie de l'IA agentique}
+
+L'intelligence artificielle agentique désigne une approche dans laquelle des systèmes autonomes, appelés agents, perçoivent leur environnement, planifient des actions et les exécutent de manière itérative pour atteindre un objectif défini \cite{wooldridge_agents}. Contrairement aux pipelines IA classiques à exécution linéaire, les agents agentiques opèrent selon une boucle de raisonnement cyclique qui leur permet de s'adapter dynamiquement aux résultats intermédiaires.
+
+Cette méthodologie s'articule autour des étapes suivantes, répétées à chaque cycle d'exécution de l'agent \cite{chase_langgraph} :
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Perception :} L'agent reçoit les données d'entrée --- requête utilisateur, documents, résultats d'autres agents ou données issues des bases de données QALITAS et GMAO PRO --- et les intègre dans son contexte courant.
+    \item \textbf{Raisonnement :} À partir du contexte perçu, l'agent utilise un modèle de langage préentraîné (LLaMA via Groq) pour analyser la situation, identifier les actions à entreprendre et formuler un plan de traitement.
+    \item \textbf{Action :} L'agent exécute les actions planifiées en s'appuyant sur des outils spécialisés : interrogation de la base de connaissances RGPD via le module RAG/FAISS, appel à l'API FastAPI, écriture dans la base de données SQLite ou communication avec d'autres agents.
+    \item \textbf{Observation :} L'agent observe les résultats de ses actions et évalue si l'objectif est atteint ou si un nouveau cycle de raisonnement est nécessaire.
+    \item \textbf{Adaptation :} En cas de résultat insatisfaisant ou d'information nouvelle, l'agent ajuste sa stratégie et relance un nouveau cycle de perception--raisonnement--action.
+\end{itemize}
+
+Dans ce projet, le framework LangGraph est utilisé pour implémenter cette logique agentique sous forme de graphes d'états, dans lesquels chaque nœud représente une étape de traitement et chaque transition correspond à une décision prise par l'agent en fonction de l'état courant du système.
+
+\subsection{Étude comparative}
+
+Le tableau suivant présente une comparaison entre les trois approches méthodologiques afin de justifier le choix retenu pour ce projet.
+
+\begin{table}[H]
+\centering
+\caption{Comparaison entre méthodologies traditionnelles, agiles et IA agentique}
+\label{tab:comparaison_methodes}
+\begin{tabularx}{\textwidth}{|l|X|X|X|}
+\hline
+\textbf{Critère} & \textbf{Traditionnelle} & \textbf{Agile} & \textbf{IA agentique} \\
+\hline
+Flexibilité & Faible & Élevée & Très élevée \\
+\hline
+Planification & Rigoureuse et fixe & Itérative et adaptable & Expérimentale et cyclique \\
+\hline
+Implication client & Limitée & Continue et forte & Variable selon le cas d'usage \\
+\hline
+Livraison & En fin de projet & À chaque itération & Par incrément de capacité IA \\
+\hline
+Documentation & Exhaustive & Légère et ciblée & Centrée sur les prompts et données \\
+\hline
+Gestion des risques & Précoce mais rigide & Continue et proactive & Centrée sur la qualité des réponses \\
+\hline
+Adaptabilité & Difficile & Facile & Très facile (ajustement des prompts) \\
+\hline
+Convient pour & Projets stables & Projets évolutifs & Systèmes autonomes basés sur LLM \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Méthode adaptée : approche hybride Scrum + IA agentique}
+
+Au regard de cette analyse comparative et des caractéristiques spécifiques de notre projet, nous avons choisi d'adopter une \textbf{approche hybride} combinant la méthode Scrum et la méthodologie de l'IA agentique.
+
+Ce choix se justifie par la double nature du projet : il relève à la fois du développement logiciel classique et de l'ingénierie en intelligence artificielle. La dimension logicielle --- incluant la conception de l'API FastAPI, des interfaces utilisateur, de la base de données et de l'orchestrateur LangGraph --- nécessite une gestion itérative de type Scrum, avec des sprints structurés, des livraisons incrémentales validées et une communication régulière avec le client TIM.
+
+La dimension IA repose quant à elle sur la méthodologie agentique : chaque agent suit un cycle itératif de perception, raisonnement, action, observation et adaptation, permettant de traiter les requêtes RGPD de manière autonome et de s'améliorer progressivement. Ce cycle agentique s'applique au niveau technique à l'intérieur de chaque sprint Scrum, structurant le développement et l'évaluation de chaque agent spécialisé.
+
+Cette combinaison garantit la rigueur du développement logiciel, la flexibilité nécessaire face aux évolutions réglementaires du RGPD et la performance opérationnelle des agents intelligents déployés.
+
+\paragraph{Présentation de Scrum}
+
+Scrum est un cadre de travail agile léger permettant de développer, livrer et maintenir des produits complexes de manière itérative et incrémentale \cite{schwaber_scrum}. Il repose sur des cycles de développement courts appelés \textbf{sprints}, d'une durée généralement comprise entre deux et quatre semaines, à l'issue desquels un incrément fonctionnel du produit est livré et potentiellement déployable.
+
+\paragraph{Les rôles Scrum}
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Product Owner :} Responsable de la vision du produit et de la gestion du Product Backlog. Il priorise les fonctionnalités selon leur valeur métier et représente les intérêts des parties prenantes.
+    \item \textbf{Scrum Master :} Facilitateur de l'équipe et garant du respect du cadre Scrum. Il identifie et lève les obstacles qui freinent la progression de l'équipe.
+    \item \textbf{Équipe de développement :} Équipe auto-organisée et pluridisciplinaire, responsable de la conception, du développement et des tests des fonctionnalités à chaque sprint.
+\end{itemize}
+
+\paragraph{Les artefacts Scrum}
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Product Backlog :} Liste ordonnée et évolutive de toutes les fonctionnalités, corrections et améliorations souhaitées pour le produit.
+    \item \textbf{Sprint Backlog :} Sous-ensemble du Product Backlog sélectionné pour être réalisé durant le sprint en cours, accompagné du plan d'exécution de l'équipe.
+    \item \textbf{Incrément :} Version fonctionnelle et intégrable du produit produite à chaque sprint, correspondant à la définition de « terminé » (Definition of Done) fixée par l'équipe.
+\end{itemize}
+
+% --- Scrum schema frame ---
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Schéma du cycle Scrum à insérer ici] \vspace{4cm}}}
+\caption{Schéma du cycle Scrum appliqué au projet}
+\label{fig:scrum_schema}
+\end{figure}
+
+\section{Conclusion}
+
+Ce premier chapitre a permis de poser le cadre général du projet en présentant l'organisme d'accueil TIM, ses solutions logicielles et le contexte réglementaire dans lequel s'inscrit cette étude. L'analyse de l'existant a mis en évidence les limites des processus manuels actuels, justifiant la conception d'une plateforme d'agents IA dédiée à la conformité RGPD. L'approche hybride combinant Scrum et la méthodologie de l'IA agentique a été retenue pour structurer le déroulement du projet. Le chapitre suivant sera consacré à l'analyse et à la spécification des besoins fonctionnels et non fonctionnels de la solution.
+
+% ==================================================
+\chapter{Sprint 0 : Analyse et spécifications des besoins}
+
+\section{Introduction}
+
+Ce chapitre correspond au Sprint 0 du projet, dont l'objectif est de définir le périmètre fonctionnel et technique de la solution avant d'entamer tout développement. Nous y identifierons les acteurs du système, détaillerons les besoins fonctionnels et non fonctionnels, présenterons le diagramme de cas d'utilisation global, établirons le backlog de produit et planifierons les sprints. L'environnement de travail retenu sera également décrit.
+
+\section{Spécifications des besoins}
+
+\subsection{Identification des acteurs}
+
+Dans le cadre de ce projet, le système possède un seul acteur principal : le \textbf{Délégué à la Protection des Données (DPO)}. Il est responsable de la supervision de la conformité RGPD au sein de l'organisation et interagit directement avec la plateforme pour lancer les analyses, consulter les résultats, gérer les risques et les incidents, traiter les demandes DSAR et valider les décisions proposées par les agents intelligents.
+
+Les agents IA, les connecteurs vers QALITAS et GMAO PRO, ainsi que les modules d'analyse internes sont considérés comme des composants du système et non comme des acteurs externes au sens UML du terme.
+
+\subsection{Les besoins fonctionnels}
+
+Les besoins fonctionnels sont organisés selon quatre grandes fonctions de la plateforme :
+
+\paragraph{Cartographie des données, Analyse de conformité \& Gestion des bases légales}
+
+Dans cette partie de la plateforme, le DPO accède au module de cartographie des données. Il consulte la liste des traitements de données personnelles détectés automatiquement dans QALITAS WEB et GMAO PRO WEB, vérifie les informations associées à chaque traitement (finalité, catégorie de données, personnes concernées) et valide ou corrige le registre RGPD généré automatiquement par le système.
+
+Le DPO lance ensuite une analyse de conformité. La plateforme affiche un score de conformité, une liste des écarts détectés par rapport aux articles du RGPD et des recommandations classées par priorité. Il consulte également les bases légales attribuées automatiquement à chaque traitement, peut les valider ou les modifier, et suit l'historique des consentements.
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item Consulter et valider la cartographie automatique des données personnelles par traitement, module et utilisateur.
+    \item Lancer une analyse de conformité RGPD et consulter le score, les écarts et les recommandations associées.
+    \item Exporter le registre des traitements (Article 30) au format PDF ou Excel.
+    \item Vérifier et valider les bases légales attribuées à chaque traitement.
+    \item Gérer les consentements : consultation, validation, retrait et alertes d'expiration.
+\end{itemize}
+
+\paragraph{Évaluation des risques, AIPD \& Gestion des incidents}
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item Consulter la matrice des risques RGPD associés aux traitements de données.
+    \item Déclencher ou consulter une Analyse d'Impact relative à la Protection des Données (AIPD) pour les traitements à risque élevé.
+    \item Suivre les mesures correctives proposées par le système et leur état de mise en œuvre.
+    \item Déclarer un incident de sécurité et suivre le dossier de notification (délai 72h CNIL).
+    \item Consulter le registre des violations de données et les dossiers de notification générés automatiquement.
+\end{itemize}
+
+\paragraph{Traitement des droits des personnes concernées (DSAR)}
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item Enregistrer une nouvelle demande d'exercice des droits (accès, rectification, effacement, portabilité, opposition).
+    \item Suivre l'état de traitement de chaque demande et consulter le délai restant (alerte J+15 et J+25).
+    \item Consulter les données retrouvées automatiquement par le système pour répondre à la demande.
+    \item Valider et envoyer la réponse officielle générée par la plateforme.
+\end{itemize}
+
+\paragraph{Pilotage de la conformité \& Amélioration continue}
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item Consulter le cockpit DPO centralisé : score global de conformité, risques prioritaires, incidents en cours, DSAR en attente.
+    \item Accéder aux preuves de conformité consolidées pour audits et contrôles CNIL.
+    \item Consulter les recommandations d'amélioration continue générées à partir des incidents et des écarts passés.
+    \item Recevoir des alertes de veille réglementaire (nouvelles recommandations CNIL, évolutions RGPD).
+\end{itemize}
+
+\subsection{Les besoins non fonctionnels}
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \textbf{Performance :} Le système doit traiter les analyses de conformité et générer les rapports dans un délai raisonnable, sans dégradation notable lors d'une utilisation simultanée.
+    \item \textbf{Sécurité :} Les données personnelles traitées par la plateforme doivent être protégées conformément aux exigences du RGPD, garantissant confidentialité, intégrité et disponibilité \cite{rgpd}.
+    \item \textbf{Disponibilité :} La plateforme doit être accessible en permanence avec un taux de disponibilité élevé.
+    \item \textbf{Maintenabilité :} L'architecture doit faciliter les évolutions futures, notamment l'ajout de nouveaux agents ou l'intégration de nouvelles réglementations.
+    \item \textbf{Ergonomie :} L'interface utilisateur doit être intuitive et adaptée aux profils non techniques, notamment les DPO.
+    \item \textbf{Scalabilité :} Le système doit s'adapter à une augmentation du nombre d'utilisateurs et du volume de données sans perte de performance.
+\end{itemize}
+
+\subsection{Diagramme de cas d'utilisation}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{5cm} [Diagramme de cas d'utilisation global à insérer ici] \vspace{5cm}}}
+\caption{Diagramme de cas d'utilisation global de la plateforme RGPD}
+\label{fig:use_case_global}
+\end{figure}
+
+\subsection{Architecture générale et communication entre agents}
+
+La plateforme repose sur une architecture hybride multi-agents, combinant une orchestration séquentielle via LangGraph et une invocation modulaire directe via FastAPI. Cette architecture est structurée autour de quatre couches fonctionnelles interdépendantes : la couche d'exposition (FastAPI), la couche d'orchestration (LangGraph), la couche agentique (agents A, B, C, D) et la couche de persistance (SQLite).
+
+\paragraph{LangGraph et l'état partagé \texttt{RGPDState}}
+
+L'orchestration complète du workflow est assurée par \textbf{LangGraph}, un framework Python développé par LangChain permettant de construire des applications multi-agents sous forme de graphes d'états \cite{chase_langgraph}. Dans ce projet, le graphe est défini dans le fichier \texttt{workflow.py} et repose sur un état partagé typé nommé \texttt{RGPDState}, qui contient les champs suivants :
+
+\begin{itemize}[leftmargin=*, label=\textbullet]
+    \item \texttt{traitement} : les données du traitement RGPD à analyser, transmises en entrée du workflow.
+    \item \texttt{incident} : les informations relatives à un incident de sécurité déclaré.
+    \item \texttt{demande\_dsar} : les données d'une demande d'exercice des droits.
+    \item \texttt{agent\_a\_output}, \texttt{agent\_b\_output}, \texttt{agent\_c\_output}, \texttt{agent\_d\_output} : les sorties produites par chaque agent, accumulées au fil de l'exécution.
+    \item \texttt{erreurs} : liste des erreurs rencontrées durant le workflow.
+\end{itemize}
+
+Le graphe d'exécution suit un flux séquentiel linéaire : \texttt{agent\_a} $\rightarrow$ \texttt{agent\_b} $\rightarrow$ \texttt{agent\_c} $\rightarrow$ \texttt{agent\_d} $\rightarrow$ \texttt{END}. Chaque nœud du graphe correspond à une fonction Python (\texttt{run\_agent\_a}, \texttt{run\_agent\_b}, \texttt{run\_agent\_c}, \texttt{run\_agent\_d}) qui lit les champs dont elle a besoin depuis \texttt{RGPDState} et écrit ses résultats dans les champs de sortie correspondants.
+
+\paragraph{Communication inter-agents}
+
+Les agents communiquent de deux manières complémentaires. Dans le cadre du workflow complet, la communication passe exclusivement par l'état partagé \texttt{RGPDState} : l'Agent A écrit ses résultats dans \texttt{agent\_a\_output}, l'Agent B les lit pour enrichir son analyse des risques, et l'Agent D agrège les sorties des trois agents précédents pour produire le rapport de gouvernance final. Dans le cadre des endpoints modulaires de l'API, les agents peuvent être invoqués directement sans passer par le graphe complet : l'endpoint \texttt{/analyser} appelle uniquement \texttt{run\_agent\_a}, l'endpoint \texttt{/risques} enchaîne \texttt{run\_agent\_a} puis \texttt{run\_agent\_b}, et l'endpoint \texttt{/droits} appelle directement \texttt{run\_agent\_c}.
+
+\paragraph{Rôle de FastAPI}
+
+\textbf{FastAPI} est un framework web Python haute performance basé sur les annotations de types et le standard ASGI \cite{fastapi_doc}. Dans ce projet, il joue un rôle bien plus large qu'une simple passerelle API. Il assure l'initialisation de l'application et de la base de données au démarrage, l'authentification des utilisateurs et le contrôle d'accès basé sur les rôles (RBAC), l'exposition des endpoints métier RGPD, l'invocation directe des agents ou du workflow complet selon le contexte, l'intégration des connecteurs QALITAS, GMAO PRO et des boîtes mail (Microsoft 365 / IMAP), la génération des dossiers et rapports réglementaires, et la persistance de toutes les traces d'exécution dans SQLite.
+
+\paragraph{Couche de persistance SQLite}
+
+\textbf{SQLite} est utilisé comme base de données opérationnelle de la plateforme, stockée dans le fichier \texttt{data/rgpd.db}. Elle constitue non seulement un espace de stockage, mais aussi une couche de traçabilité, d'audit et de preuve réglementaire. Elle contient notamment les tables \texttt{treatments}, \texttt{dsars}, \texttt{violations}, \texttt{dpia\_dossiers}, \texttt{consents}, \texttt{cnil\_notifications}, \texttt{rgpd\_register} pour les données RGPD métier, ainsi que les tables \texttt{dpo\_validations} et \texttt{dpo\_feedback\_memory} pour la mémoire des décisions humaines du DPO, et les tables \texttt{realtime\_snapshots}, \texttt{governance\_snapshots} pour le suivi des évolutions dans le temps.
+
+\paragraph{Couche RAG/FAISS}
+
+La couche de recherche augmentée (RAG) est implémentée dans \texttt{rag\_builder.py}. Elle indexe deux documents juridiques de référence : le texte intégral du RGPD (\texttt{uploads/rgpd.txt}) et la loi tunisienne 2004-63 (\texttt{uploads/loi2004.txt}). Ces documents sont découpés en segments de 400 mots avec un chevauchement de 50 mots, puis encodés avec le modèle multilingue \textbf{paraphrase-multilingual-MiniLM-L12-v2} \cite{reimers_sbert}, produisant des vecteurs de 384 dimensions. L'index FAISS de type \texttt{IndexFlatL2} permet une recherche exacte par distance L2. Les résultats de recherche sont utilisés par l'Agent A pour enrichir les violations détectées avec des citations légales précises, et par le générateur de rapports pour contextualiser les recommandations.
+
+\paragraph{Modèle de langage LLaMA 3.3 via Groq}
+
+Le modèle de langage utilisé est \textbf{LLaMA 3.3 70B Versatile}, développé par Meta AI \cite{meta_llama}, et exécuté via l'API Groq \cite{groq_doc}, une infrastructure d'inférence basée sur des processeurs LPU (\textit{Language Processing Unit}) offrant des vitesses de génération particulièrement élevées. Les appels sont effectués directement via le client Python \texttt{groq} avec la méthode \texttt{client.chat.completions.create()}. Les prompts sont principalement formulés comme des messages utilisateur uniques (\textit{user-message prompting}), sans utilisation systématique du rôle \textit{system}. Les paramètres d'inférence varient selon la nature de la tâche : \texttt{temperature=0.0} et \texttt{max\_tokens=5} pour les classifications binaires, \texttt{temperature=0.1} et \texttt{max\_tokens=600} pour l'inférence de champs structurés, et \texttt{temperature=0.3} et \texttt{max\_tokens=1000} pour la génération des rapports DPO.
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Schéma d'architecture multi-agents / diagramme de séquences à insérer ici] \vspace{4cm}}}
+\caption{Architecture de communication entre les agents et l'orchestrateur}
+\label{fig:architecture_agents}
+\end{figure}
+
+\section{Backlog de produit}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du produit}
+\label{tab:backlog}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{2.5cm}|c|c|p{6cm}|c|c|}
+\hline
+\textbf{Fonctionnalités} & \textbf{N°} & \textbf{Id-US} & \textbf{User Story} & \textbf{Sprint} & \textbf{Priorité} \\
+\hline
+
+\multirow{3}{2.5cm}{\centering Cartographie \& Conformité}
+ & \multirow{3}{*}{\centering 1}
+ & US01 & En tant que DPO, je veux consulter et valider la cartographie automatique des données personnelles. & 1 & Élevée \\
+\cline{3-6}
+ & & US02 & En tant que DPO, je veux lancer une analyse automatique de la conformité d'un traitement. & 1 & Élevée \\
+\cline{3-6}
+ & & US03 & En tant que DPO, je veux consulter un rapport de conformité avec score et recommandations. & 1 & Élevée \\
+\hline
+
+\multirow{4}{2.5cm}{\centering Gestion des risques \& incidents}
+ & \multirow{4}{*}{\centering 2}
+ & US04 & En tant que DPO, je veux consulter et exporter le registre des traitements (Article 30). & 1 & Élevée \\
+\cline{3-6}
+ & & US05 & En tant que DPO, je veux obtenir une évaluation des risques liés à un traitement. & 1 & Élevée \\
+\cline{3-6}
+ & & US06 & En tant que DPO, je veux recevoir des alertes en cas de risque critique détecté. & 1 & Moyenne \\
+\cline{3-6}
+ & & US07 & En tant que DPO, je veux déclarer un incident de sécurité et suivre la notification (72h CNIL). & 1 & Élevée \\
+\hline
+
+\multirow{2}{2.5cm}{\centering Droits des personnes (DSAR)}
+ & \multirow{2}{*}{\centering 3}
+ & US08 & En tant que DPO, je veux enregistrer et suivre les demandes d'exercice des droits. & 2 & Élevée \\
+\cline{3-6}
+ & & US09 & En tant que DPO, je veux être alerté avant l'expiration du délai de 30 jours (J+15, J+25). & 2 & Élevée \\
+\hline
+
+\multirow{1}{2.5cm}{\centering Pilotage \& Amélioration}
+ & \multirow{1}{*}{\centering 4}
+ & US10 & En tant que DPO, je veux consulter un tableau de bord de synthèse de la conformité globale. & 4 & Moyenne \\
+\hline
+
+\end{tabular}
+\end{table}
+
+\section{Planification des sprints}
+
+\begin{table}[H]
+\centering
+\caption{Planification des sprints}
+\label{tab:planification_sprints}
+\begin{tabularx}{\textwidth}{|c|X|X|}
+\hline
+\textbf{Sprint} & \textbf{Objectif} & \textbf{User Stories} \\
+\hline
+Sprint 0 & Analyse, spécifications, mise en place de l'environnement & -- \\
+\hline
+Sprint 1 & Agents d'analyse de conformité et de gestion des risques & US01, US02, US03, US04, US05, US06, US07 \\
+\hline
+Sprint 2 & Agent de gestion des droits DSAR & US08, US09 \\
+\hline
+Sprint 3 & Agent de gestion des rapports DPO & -- \\
+\hline
+Sprint 4 & Orchestration multi-agents et tableau de bord & US10 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Environnement de travail}
+
+\subsection{Environnement matériel}
+
+\begin{table}[H]
+\centering
+\caption{Environnement matériel}
+\label{tab:env_materiel}
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Équipement} & \textbf{Spécifications} \\
+\hline
+Ordinateur de développement & PC portable, Processeur : AMD Ryzen 5 4600H, RAM : 16 Go, Stockage : 512 Go SSD \\
+\hline
+Système d'exploitation & Windows 11 \\
+\hline
+Navigateur web & Brave \\
+\hline
+Connexion réseau & Connexion haut débit, accès Internet pour les API \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Environnement logiciel}
+
+\begin{table}[H]
+\centering
+\caption{Environnement logiciel et outils utilisés}
+\label{tab:env_logiciel}
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Catégorie} & \textbf{Outil / Technologie} & \textbf{Utilisation} \\
+\hline
+Éditeur de code & Visual Studio Code & Développement de l'application \\
+\hline
+Environnement virtuel & Python venv & Isolation des dépendances \\
+\hline
+Backend & Python / FastAPI & Développement de l'API et des agents IA \\
+\hline
+Orchestration des agents & LangGraph & Gestion du flux entre les agents IA \\
+\hline
+Modèle de langage & LLaMA (via Groq) & Analyse intelligente et génération de réponses \\
+\hline
+Inférence LLM & Groq API & Accélération de l'exécution des modèles LLM \\
+\hline
+Recherche sémantique & RAG + FAISS & Recherche dans les documents RGPD \\
+\hline
+Documentation & Overleaf / LaTeX & Rédaction du rapport de PFE \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Conclusion}
+
+Ce chapitre a permis de définir les bases fonctionnelles et techniques du projet. L'identification de l'acteur principal (DPO), la formalisation des besoins fonctionnels et non fonctionnels, la construction du backlog de produit et la planification des sprints constituent les fondements du développement. Le chapitre suivant sera consacré au Sprint 1, portant sur la conception et la réalisation des agents d'analyse de conformité et de gestion des risques.
+
+% ==================================================
+\chapter{Sprint 1 : Agents d'analyse de conformité et de gestion des risques}
+
+\section{Introduction}
+
+Ce chapitre correspond au premier sprint de développement. Au cours de cette étape, nous avons réalisé les premières briques fonctionnelles de la plateforme en mettant en place deux agents intelligents complémentaires. Le premier est consacré à l'analyse de conformité et à la cartographie des données, tandis que le second est dédié à l'évaluation des risques, à l'AIPD et à la gestion des incidents. Ce sprint a donc constitué le socle de notre solution, puisqu'il nous a permis de passer d'une idée générale de conformité RGPD à un mécanisme concret d'analyse, de structuration et d'aide à la décision.
+
+\section{Objectif du Sprint}
+
+L'objectif du Sprint 1 est de mettre en place les premiers agents capables d'assister le DPO dans l'analyse des traitements de données personnelles. Concrètement, nous avons cherché à développer un premier agent capable d'identifier les données personnelles, d'évaluer la conformité d'un traitement et de proposer les bases légales les plus adaptées. En parallèle, nous avons conçu un second agent chargé d'évaluer les risques, de détecter les cas nécessitant une AIPD et d'apporter une première réponse structurée en cas d'incident de sécurité. L'enjeu principal de ce sprint était donc de doter la plateforme d'un noyau d'analyse fiable, sur lequel les autres fonctionnalités pourraient ensuite s'appuyer.
+
+\section{Use Case détaillé}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{5cm} [Diagramme de cas d'utilisation détaillé --- Sprint 1 à insérer ici] \vspace{5cm}}}
+\caption{Use Case détaillé --- Sprint 1}
+\label{fig:use_case_sprint1}
+\end{figure}
+
+Le cas d'utilisation principal de ce sprint peut être formulé ainsi : \textit{En tant que DPO, je veux disposer d'agents intelligents capables d'analyser automatiquement les traitements de données, de mesurer leur niveau de conformité RGPD et de gérer les risques et incidents associés, afin de disposer rapidement d'une vision exploitable et traçable de la conformité.}
+
+\section{Sprint Backlog}
+
+\begin{table}[H]
+\centering
+\caption{Sprint Backlog --- Sprint 1}
+\label{tab:backlog_sprint1}
+\begin{tabularx}{\textwidth}{|c|X|c|}
+\hline
+\textbf{Id-US} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US01 & En tant que DPO, je veux consulter et valider la cartographie automatique des données personnelles. & Élevée \\
+\hline
+US02 & En tant que DPO, je veux lancer une analyse automatique de la conformité d'un traitement. & Élevée \\
+\hline
+US03 & En tant que DPO, je veux consulter un rapport de conformité avec score et recommandations. & Élevée \\
+\hline
+US04 & En tant que DPO, je veux consulter et exporter le registre des traitements. & Élevée \\
+\hline
+US05 & En tant que DPO, je veux obtenir une évaluation des risques liés à un traitement. & Élevée \\
+\hline
+US06 & En tant que DPO, je veux recevoir des alertes en cas de risque critique détecté. & Moyenne \\
+\hline
+US07 & En tant que DPO, je veux déclarer un incident de sécurité et suivre la notification. & Élevée \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Agent d'analyse de conformité --- Agent A}
+
+Dans le cadre de ce sprint, nous avons développé un premier agent consacré à l'analyse de conformité. Cet agent constitue le point d'entrée de la plateforme, car il intervient avant les autres traitements. Son rôle est de partir d'une description métier ou d'informations issues des applications de l'entreprise afin de construire une vision claire du traitement concerné, puis d'en évaluer la conformité au regard des exigences du RGPD.
+
+\begin{table}[H]
+\centering
+\caption{Cycle de vie agentique de l'Agent A}
+\label{tab:cycle_agent_a}
+\begin{tabularx}{\textwidth}{|p{2.2cm}|X|X|X|}
+\hline
+\textbf{Phase} & \textbf{Ce qui est utilisé} & \textbf{Ce qui n'est pas mobilisé directement} & \textbf{Résultat principal} \\
+\hline
+Perception & Requête \texttt{/analyser}, description du traitement, champs issus des connecteurs QALITAS/GMAO, inventaires et scans déjà stockés & Données DSAR, cockpit DPO, snapshots de gouvernance & Contexte d'analyse exploitable \\
+\hline
+Raisonnement & Validation de schéma, moteur de règles, calcul de sévérité, recherche RAG, inférence LLaMA ciblée & Orchestrateur global, génération de rapport DPO, synchronisation mail & Score, écarts, base légale, registre \\
+\hline
+Action & Création de \texttt{q1\_cartographie}, \texttt{q2\_conformite}, \texttt{q3\_base\_legale}, \texttt{q1\_register}, persistance SQLite & Actions correctives clôturées, traitement DSAR, monitoring temps réel & Sorties structurées persistées \\
+\hline
+Observation & Contrôles de complétude, cohérence du score, présence des champs de registre, contrôle des citations & Arbitrage final du DPO, preuve de clôture d'action & Validation interne des résultats \\
+\hline
+Adaptation & Mémoire de feedback DPO, corrections précédentes, réutilisation de décisions similaires & Réentraînement lourd automatique des modèles, veille réglementaire temps réel & Amélioration progressive des recommandations \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Perception}
+
+La première étape du fonctionnement de cet agent correspond à la perception. Dans cette phase, nous avons voulu que l'agent commence par rassembler toutes les informations utiles avant de produire un jugement. Il reçoit ainsi les éléments décrivant le traitement concerné, qu'ils proviennent d'une saisie réalisée par l'utilisateur ou d'une lecture des données métiers présentes dans QALITAS WEB et GMAO PRO WEB. L'idée est de permettre à l'agent de disposer d'un contexte suffisamment riche pour comprendre la nature du traitement, les données concernées, les personnes impliquées et le cadre général de son utilisation.
+
+\begin{table}[H]
+\centering
+\caption{Données perçues par l'Agent A}
+\label{tab:perception_agent_a}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|p{2.7cm}|}
+\hline
+\textbf{Source} & \textbf{Données utilisées} & \textbf{Rôle dans la perception} & \textbf{Mobilisation} \\
+\hline
+Saisie manuelle DPO & Finalité, personnes concernées, catégories de données, durée de conservation, base légale déclarée, mesures de sécurité & Constitue l'entrée primaire lorsque le traitement est décrit manuellement & Directe \\
+\hline
+Connecteurs QALITAS / GMAO & Noms de modules, champs détectés, structures de données, contenus exposés par les applications métier & Permet de rapprocher la description métier de la réalité applicative & Directe \\
+\hline
+Base SQLite & Inventaires déjà enregistrés, scans non structurés, analyses précédentes, historiques de détection & Enrichit le contexte et limite les analyses isolées & Directe \\
+\hline
+Description libre & Texte métier envoyé au LLM pour compléter les champs manquants & Sert à l'inférence structurée quand certaines informations sont absentes & Conditionnelle \\
+\hline
+Données non utilisées à ce stade & DSAR, snapshots de gouvernance, rapports DPO, orchestration complète & Non pertinentes pour la qualification initiale du traitement & Non mobilisées \\
+\hline
+\end{tabularx}
+\end{table}
+
+Dans la pratique, cette perception porte sur la finalité du traitement, les catégories de données manipulées, les personnes concernées, la durée de conservation, la base légale déclarée et les principales mesures de sécurité. Lorsque l'analyse est lancée à partir d'un module métier, l'agent prend également en compte les champs identifiés et certains contenus susceptibles de contenir des données personnelles ou sensibles. Lorsque des informations sont manquantes, nous avons prévu un mécanisme d'interprétation de la description fournie afin d'aider l'agent à compléter sa lecture du contexte. En revanche, à ce stade, l'agent ne traite pas encore les demandes DSAR ni les éléments de gouvernance globale, car ils ne relèvent pas de sa mission immédiate.
+
+\subsection{Raisonnement}
+
+Une fois les données perçues, l'agent entre dans sa phase de raisonnement. Dans notre projet, nous avons choisi de ne pas baser cette étape sur une simple génération automatique. Au contraire, nous avons adopté une approche structurée dans laquelle l'agent examine le traitement au regard des principes fondamentaux du RGPD et du cadre tunisien en matière de protection des données \cite{rgpd,inpdp}. Il vérifie par exemple si la finalité est bien définie, si une base légale existe, si les données collectées semblent proportionnées et si les éléments essentiels de documentation sont présents.
+
+Pour renforcer la qualité de cette analyse, nous avons combiné plusieurs mécanismes complémentaires. Une première logique de contrôle permet de relever les écarts potentiels, tandis qu'une deuxième logique permet de rattacher ces écarts à des références juridiques et à des recommandations plus concrètes. Nous avons également prévu une aide intelligente dans les cas où certaines informations restent imprécises ou incomplètes. Ainsi, le raisonnement de l'agent ne se limite pas à produire un verdict ; il cherche aussi à expliquer, à justifier et à orienter l'utilisateur vers une meilleure compréhension du traitement.
+
+\subsection{Action}
+
+La phase d'action correspond à la restitution concrète du travail réalisé par l'agent. À ce niveau, nous avons fait en sorte que l'Agent A produise des résultats directement exploitables par le DPO. Il génère ainsi une cartographie des données, un score global de conformité, une liste d'écarts identifiés, des recommandations classées selon leur importance, ainsi qu'une première structuration du registre RGPD.
+
+\begin{table}[H]
+\centering
+\caption{Sorties produites par l'Agent A}
+\label{tab:outputs_agent_a}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|p{3.2cm}|}
+\hline
+\textbf{Sortie} & \textbf{Contenu} & \textbf{Persistance / transmission} \\
+\hline
+\texttt{q1\_cartographie} & Champs détectés, catégories de données, criticité, système, module & SQLite + état partagé LangGraph \\
+\hline
+\texttt{q2\_conformite} & Violations, score, niveau, recommandations & SQLite + API de consultation \\
+\hline
+\texttt{q3\_base\_legale} & Base légale proposée ou validée, justification & SQLite + consommation par les vues métier \\
+\hline
+\texttt{q1\_register} & Entrée de registre RGPD structurée & Table \texttt{rgpd\_register} \\
+\hline
+Bloc \texttt{intelligence} & Éléments d'aide issus de l'inférence et du contexte source & État partagé pour l'Agent B \\
+\hline
+\end{tabularx}
+\end{table}
+
+Ces résultats sont ensuite enregistrés dans la base de données afin d'assurer leur traçabilité et leur réutilisation dans les étapes suivantes. Ils sont également transmis à l'agent chargé des risques, qui s'appuie sur cette première lecture pour prolonger l'analyse. Il est important de souligner que l'Agent A ne réalise pas encore le traitement des droits des personnes ni la gouvernance globale ; il prépare avant tout une base d'analyse fiable et structurée.
+
+\subsection{Observation}
+
+La phase d'observation permet à l'agent de vérifier la qualité de sa propre production avant de la restituer définitivement. Dans notre approche, cette étape est importante, car elle évite qu'une analyse incomplète ou mal structurée soit transmise telle quelle à l'utilisateur. L'agent contrôle donc si les informations essentielles ont bien été prises en compte, si le score est cohérent avec les écarts détectés et si les éléments nécessaires au registre sont suffisamment renseignés.
+
+Lorsque certaines zones restent ambiguës, l'agent peut reprendre localement une partie de son analyse afin d'améliorer la cohérence du résultat produit. Cette observation n'a toutefois pas pour objectif de remplacer le contrôle humain. La validation finale relève toujours du DPO, mais cette étape permet déjà de livrer un résultat plus propre, plus complet et plus crédible.
+
+\subsection{Adaptation}
+
+La phase d'adaptation de l'Agent A s'appuie sur les retours du DPO et sur la mémoire de feedback stockée en base. Lorsqu'une recommandation a déjà été corrigée, validée ou rejetée dans un contexte similaire, cette information est réutilisée pour ajuster les analyses futures. L'agent améliore ainsi progressivement la pertinence de ses sorties sans remettre en cause le rôle de validation humaine.
+
+Dans notre travail, cette adaptation repose surtout sur l'expérience accumulée au fil des validations et des corrections apportées par le DPO. Lorsqu'une recommandation s'avère pertinente, imprécise ou inadaptée dans un contexte particulier, cette information peut être réutilisée par la suite. Cela permet à l'agent de gagner en pertinence sans perdre son caractère explicable ni remettre en cause la place centrale de l'expert humain.
+
+\subsection{Remarques}
+
+En résumé, l'Agent A représente la première pierre du projet. C'est lui qui nous a permis de structurer la lecture des traitements de données et de produire une analyse de conformité utilisable dans un cadre réel. Sa spécialisation est volontaire : il ne cherche pas à tout faire, mais à bien remplir son rôle de base, en fournissant au reste de la plateforme un résultat solide, compréhensible et réutilisable.
+
+\section{Agent de risques et incidents --- Agent B}
+
+Le second agent développé dans ce sprint est consacré aux risques et aux incidents. Son rôle est de prolonger le travail effectué par l'Agent A en donnant au DPO une lecture plus opérationnelle des traitements analysés. Là où le premier agent met surtout l'accent sur la conformité, ce second agent s'intéresse davantage à l'exposition au risque, aux situations nécessitant une analyse d'impact et aux réactions à adopter en cas d'incident.
+
+\begin{table}[H]
+\centering
+\caption{Cycle de vie agentique de l'Agent B}
+\label{tab:cycle_agent_b}
+\begin{tabularx}{\textwidth}{|p{2.2cm}|X|X|X|}
+\hline
+\textbf{Phase} & \textbf{Ce qui est utilisé} & \textbf{Ce qui n'est pas mobilisé directement} & \textbf{Résultat principal} \\
+\hline
+Perception & Sorties de l'Agent A, incident déclaré, inventaires SQLite, contexte traitement & Flux DSAR, génération de rapport DPO, assistant conversationnel & Contexte de risque consolidé \\
+\hline
+Raisonnement & Scénarios de risque, scores gravité/vraisemblance, critères AIPD, logique de notification & RAG juridique détaillé par article, entraînement ML, routage multi-agents & Matrice de risques et décision AIPD / incident \\
+\hline
+Action & Création de \texttt{q4\_risques\_aipd}, \texttt{q6\_incidents}, actions et dossiers & Réponse DSAR, snapshots de gouvernance finaux & Dossiers de risque et d'incident \\
+\hline
+Observation & Contrôle de couverture des scénarios, cohérence criticité / données sensibles, complétude du dossier & Validation humaine finale, classement des preuves DPO & Vérification d'exploitabilité \\
+\hline
+Adaptation & Feedback DPO sur niveaux de criticité et mesures correctives & Veille réglementaire temps réel, réentraînement automatique des seuils & Ajustement de la priorisation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Perception}
+
+La phase de perception de l'Agent B commence à partir des résultats déjà produits par l'Agent A. Nous avons ainsi voulu éviter de refaire inutilement la même analyse, et permettre au second agent de s'appuyer sur un contexte déjà structuré. Il récupère donc les informations relatives au traitement, aux catégories de données, aux écarts de conformité et aux premiers niveaux de sensibilité identifiés.
+
+\begin{table}[H]
+\centering
+\caption{Données perçues par l'Agent B}
+\label{tab:perception_agent_b}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|p{2.7cm}|}
+\hline
+\textbf{Source} & \textbf{Données utilisées} & \textbf{Rôle dans la perception} & \textbf{Mobilisation} \\
+\hline
+Sortie Agent A & Cartographie, violations, score, registre, base légale, niveau de sensibilité & Constitue le socle analytique du risque & Directe \\
+\hline
+Entrée incident & Type d'incident, description, impact, origine, systèmes touchés & Déclenche la branche incidents / notification & Conditionnelle \\
+\hline
+SQLite & Inventaires, revues de risque, scans non structurés, contexte de traitement déjà connu & Donne une vision plus large que l'analyse du moment & Directe \\
+\hline
+Mémoire DPO & Arbitrages précédents sur les risques et actions correctives & Prépare l'adaptation des niveaux de criticité & Différée \\
+\hline
+Données non utilisées à ce stade & Mailboxes DSAR, rapport de gouvernance final, chat assistant DPO & Hors périmètre de la phase de risque & Non mobilisées \\
+\hline
+\end{tabularx}
+\end{table}
+
+L'agent peut également prendre en compte un incident signalé par le DPO. En complément, il s'appuie sur les informations déjà enregistrées dans le système afin de replacer le traitement dans un contexte plus large. Cette perception lui permet d'aborder le risque non pas comme un cas abstrait, mais comme une situation concrète liée à un traitement, à des données et à des usages réels de la plateforme.
+
+\subsection{Raisonnement}
+
+Dans sa phase de raisonnement, l'Agent B cherche à identifier les principaux scénarios de risque auxquels le traitement peut être exposé. Il peut s'agir par exemple d'un accès non autorisé, d'une fuite de données, d'un manque de protection sur des données sensibles ou encore d'une défaillance liée à un transfert ou à un sous-traitant. L'agent examine alors la gravité potentielle de ces situations ainsi que leur vraisemblance afin de fournir une lecture claire de la criticité.
+
+Cette étape vise également à déterminer si le traitement nécessite une AIPD, et à apprécier, en cas d'incident, s'il faut envisager une notification auprès de l'autorité compétente ou des personnes concernées \cite{rgpd,cnil_aipd,cnil_breach}. Nous avons donc conçu cet agent comme un outil d'évaluation et d'aide à la décision, centré sur la maîtrise du risque et la réaction opérationnelle.
+
+\subsection{Action}
+
+À l'issue de cette analyse, l'Agent B produit une matrice des risques, un niveau de criticité, des recommandations de réduction du risque, ainsi qu'un dossier AIPD lorsque cela est nécessaire. En cas d'incident, il prépare également un dossier structuré permettant au DPO de disposer rapidement des informations essentielles.
+
+\begin{table}[H]
+\centering
+\caption{Sorties produites par l'Agent B}
+\label{tab:outputs_agent_b}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|p{3.2cm}|}
+\hline
+\textbf{Sortie} & \textbf{Contenu} & \textbf{Usage principal} \\
+\hline
+\texttt{q4\_risques\_aipd} & Matrice de risques, criticité, décision AIPD, mesures correctives & Lecture DPO + entrée Agent D \\
+\hline
+\texttt{q6\_incidents} & Qualification de l'incident, besoin de notification, impacts & Suivi incident + gouvernance \\
+\hline
+Actions correctives & Mesures à ouvrir ou à prioriser & Workflow de remédiation \\
+\hline
+Dossiers réglementaires & Dossier AIPD ou notification & Audit, contrôle, documentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+Les résultats produits par cet agent sont ensuite enregistrés pour être suivis, exploités et, si besoin, réutilisés par les autres composants de la plateforme. Son action reste donc centrée sur un objectif précis : qualifier le risque, le documenter et préparer les suites opérationnelles.
+
+\subsection{Observation}
+
+L'Agent B contrôle la couverture des scénarios de risque et la cohérence entre les risques retenus, les données sensibles, les violations détectées et les mesures de sécurité connues. Il vérifie aussi que les dossiers AIPD et incidents contiennent bien les éléments attendus pour être exploitables par le DPO dans un cadre d'audit ou de déclaration.
+
+Dans cette phase, l'agent vérifie surtout que le niveau de risque retenu reste cohérent avec la réalité du traitement étudié. Il s'assure également que les dossiers produits sont suffisamment complets pour être utilisés par le DPO. Cette étape renforce la fiabilité du travail réalisé avant toute validation humaine.
+
+\subsection{Adaptation}
+
+Comme l'Agent A, l'Agent B s'appuie sur la mémoire de feedback du DPO. Les arbitrages précédents sur les niveaux de criticité, les recommandations ou les décisions de notification sont réutilisés pour affiner les analyses futures. Cette boucle d'amélioration continue permet à l'agent de rester cohérent avec les usages réels de l'organisation.
+
+L'intérêt de cette adaptation est de rapprocher progressivement les résultats de l'agent des réalités du terrain. Les retours du DPO permettent par exemple d'affiner l'appréciation de certains niveaux de criticité ou de mieux adapter les mesures correctives proposées au contexte réel de l'organisation. L'agent devient ainsi plus pertinent au fil des utilisations.
+
+\subsection{Remarques}
+
+L'Agent B apporte au projet une dimension concrète de pilotage du risque. Il ne se limite pas à constater des écarts ; il aide à comprendre leurs conséquences, à hiérarchiser les priorités et à préparer les réponses appropriées. Il complète ainsi naturellement le travail de l'Agent A et renforce la portée opérationnelle de la plateforme.
+
+\section{Implémentation des agents 1 et 2}
+
+Sur le plan pratique, ce sprint nous a permis d'intégrer les deux premiers agents au sein de la plateforme. Nous avons relié leur fonctionnement à l'interface d'analyse, à la base de données et aux sources métiers afin que les traitements étudiés puissent être enregistrés, suivis et réutilisés dans les étapes suivantes. Nous avons également veillé à ce que les résultats produits soient structurés de manière suffisamment claire pour pouvoir alimenter à la fois les vues de consultation et les modules plus avancés du projet.
+
+\paragraph{Captures d'écran}
+
+Les illustrations les plus pertinentes à insérer dans cette partie sont résumées dans le tableau suivant.
+
+\begin{table}[H]
+\centering
+\caption{Captures recommandées --- Sprint 1}
+\label{tab:captures_sprint1}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.2cm}|}
+\hline
+\textbf{Capture} & \textbf{Intérêt dans le rapport} & \textbf{Section conseillée} \\
+\hline
+Écran de lancement d'analyse & Montre l'entrée réelle utilisée par l'Agent A lors de la perception & Implémentation Sprint 1 \\
+\hline
+Cartographie des champs détectés & Illustre la sortie \texttt{q1\_cartographie} et la classification des données & Après Agent A \\
+\hline
+Rapport de conformité avec score & Visualise la phase d'action de l'Agent A & Après Action Agent A \\
+\hline
+Matrice de risques & Montre la décision de l'Agent B et la criticité retenue & Après Action Agent B \\
+\hline
+Dossier AIPD ou incident & Appuie la dimension opérationnelle et réglementaire du Sprint 1 & Fin de la section d'implémentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Captures d'écran / schémas d'implémentation du Sprint 1 à insérer ici] \vspace{4cm}}}
+\caption{Implémentation des agents 1 et 2}
+\label{fig:realisation_sprint1}
+\end{figure}
+
+\paragraph{Remarques}
+
+Ce sprint a permis de poser les bases fonctionnelles les plus importantes du projet. Il a surtout confirmé que notre plateforme pouvait aller au-delà d'un simple outil d'assistance en proposant une véritable logique d'analyse structurée, traçable et exploitable par le DPO.
+
+\section{Conclusion}
+
+Le Sprint 1 a permis de développer les deux premiers agents de la plateforme et de rendre opérationnelles les fonctions de cartographie, d'analyse de conformité, de gestion des risques et de traitement des incidents. Il constitue le socle analytique sur lequel s'appuieront les modules DSAR, la gouvernance DPO et l'orchestration multi-agents.
+
+% ==================================================
+\chapter{Sprint 2 : Agent de gestion des droits DSAR}
+
+\section{Introduction}
+
+Ce chapitre correspond au deuxième sprint de développement. Au cours de cette étape, nous avons conçu et réalisé l'agent chargé de la gestion des demandes d'exercice des droits des personnes concernées. Ce sprint a été particulièrement important, car il nous a permis de faire évoluer la plateforme d'une logique d'analyse interne vers une logique de traitement concret des obligations imposées par le RGPD \cite{rgpd}.
+
+\section{Objectif du Sprint}
+
+L'objectif du Sprint 2 est de doter la plateforme d'un agent spécialisé capable de centraliser le traitement des droits des personnes. Dans ce cadre, nous avons cherché à automatiser la qualification des demandes, la recherche des données concernées, la préparation des réponses officielles et le suivi des délais réglementaires. Nous avons également voulu intégrer les différents canaux d'entrée possibles, notamment la saisie directe et les boîtes mail dédiées, afin de rendre le processus plus réaliste et plus complet.
+
+\section{Use Case détaillé}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{5cm} [Diagramme de cas d'utilisation détaillé --- Sprint 2 à insérer ici] \vspace{5cm}}}
+\caption{Use Case détaillé --- Sprint 2}
+\label{fig:use_case_sprint2}
+\end{figure}
+
+Le cas d'utilisation principal peut être résumé ainsi : \textit{En tant que DPO, je veux disposer d'un agent capable de recevoir une demande DSAR, de la qualifier, d'identifier les données concernées, de préparer la réponse appropriée et de suivre les délais réglementaires, afin d'assurer un traitement fiable et traçable des droits des personnes.}
+
+\section{Sprint Backlog}
+
+\begin{table}[H]
+\centering
+\caption{Sprint Backlog --- Sprint 2}
+\label{tab:backlog_sprint2}
+\begin{tabularx}{\textwidth}{|c|X|c|}
+\hline
+\textbf{Id-US} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US08 & En tant que DPO, je veux enregistrer et suivre les demandes d'exercice des droits. & Élevée \\
+\hline
+US09 & En tant que DPO, je veux être alerté avant l'expiration du délai de 30 jours. & Élevée \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Agent de gestion des droits DSAR --- Agent C}
+
+Dans ce sprint, nous avons développé un agent dédié à la gestion des demandes DSAR. Son rôle est d'accompagner le DPO dans la réception, l'analyse et le suivi des demandes d'accès, de rectification, d'effacement, de portabilité ou d'opposition. Cet agent apporte ainsi une dimension très concrète au projet, puisqu'il relie directement la plateforme aux droits des personnes concernées.
+
+\begin{table}[H]
+\centering
+\caption{Cycle de vie agentique de l'Agent C}
+\label{tab:cycle_agent_c}
+\begin{tabularx}{\textwidth}{|p{2.2cm}|X|X|X|}
+\hline
+\textbf{Phase} & \textbf{Ce qui est utilisé} & \textbf{Ce qui n'est pas mobilisé directement} & \textbf{Résultat principal} \\
+\hline
+Perception & Demande DSAR, identité du demandeur, message libre, historiques, inventaires, boîtes mail & RAG juridique détaillé, cockpit DPO, monitoring global & Dossier de demande exploitable \\
+\hline
+Raisonnement & Règles métier DSAR, calcul des délais, classifieur TF-IDF + régression logistique & Moteur de risque AIPD, détection de conformité des traitements & Qualification et scénario de réponse \\
+\hline
+Action & Recherche transversale, génération de paquet DSAR, réponse officielle, journalisation SQLite & Rapport DPO final, orchestration complète obligatoire & Réponse DSAR et traces \\
+\hline
+Observation & Contrôle d'exhaustivité, cohérence du droit exercé, suivi des échéances & Validation de gouvernance globale, notation de conformité & Vérification du dossier DSAR \\
+\hline
+Adaptation & Corrections du DPO, feedback sur réponses et recherches, historiques d'exécution & Réentraînement automatique systématique, politique globale de risque & Amélioration du traitement DSAR \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Perception}
+
+La phase de perception de l'Agent C est centrée sur la demande elle-même. Dans notre approche, l'agent commence par recueillir toutes les informations utiles sur la personne concernée, le type de droit exercé, le contenu de la demande et sa date de réception. Cette phase est différente de celle des agents précédents, car elle ne part plus principalement d'un traitement ou d'un module, mais d'une demande formulée par une personne.
+
+\begin{table}[H]
+\centering
+\caption{Données perçues par l'Agent C}
+\label{tab:perception_agent_c}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|p{2.7cm}|}
+\hline
+\textbf{Source} & \textbf{Données utilisées} & \textbf{Rôle dans la perception} & \textbf{Mobilisation} \\
+\hline
+Formulaire DSAR & Type de droit, nom, email, téléphone, identifiants, description, date de réception & Sert d'entrée principale au traitement DSAR & Directe \\
+\hline
+Boîtes mail & Messages Microsoft 365 ou IMAP, pièces jointes, métadonnées de réception & Permet de transformer un email en demande structurée & Conditionnelle \\
+\hline
+Inventaires et historiques & Traitements, champs, scans non structurés, analyses passées & Aide à localiser les données liées au demandeur & Directe \\
+\hline
+Base SQLite & Statuts, exécutions précédentes, délais, journalisation & Donne un contexte de suivi et de traçabilité & Directe \\
+\hline
+Données non utilisées à ce stade & Matrice de risques détaillée, rapport DPO complet, monitoring temps réel & Hors périmètre du traitement DSAR unitaire & Non mobilisées \\
+\hline
+\end{tabularx}
+\end{table}
+
+L'agent reçoit donc les informations d'identification du demandeur, la nature du droit invoqué, le message transmis et, le cas échéant, les pièces jointes associées. Il s'appuie ensuite sur les données déjà cartographiées dans le système pour préparer la recherche des informations concernées. L'objectif n'est pas encore de produire une synthèse globale, mais bien de comprendre une demande précise et de la replacer dans son contexte.
+
+\subsection{Raisonnement}
+
+La phase de raisonnement consiste à déterminer si la demande est recevable, à qualifier le droit exercé et à identifier les zones du système où se trouvent potentiellement les données du demandeur. L'Agent C combine une logique métier déterministe et un classifieur supervisé DSAR fondé sur \texttt{TfidfVectorizer} et \texttt{LogisticRegression} \cite{sklearn_tfidf,sklearn_logreg}. La prédiction ML reste consultative ; la décision finale sur le type de droit et le scénario de traitement demeure portée par les règles de l'agent.
+
+Le raisonnement de l'agent inclut aussi une dimension temporelle. Nous avons en effet prévu qu'il tienne compte des délais réglementaires et qu'il aide à distinguer les cas simples des cas plus sensibles. L'objectif de cette étape est donc de permettre au système de comprendre la demande, de déterminer la réponse attendue et de préparer un traitement cohérent, sans se substituer au rôle d'arbitrage du DPO.
+
+\subsection{Action}
+
+À l'issue de son analyse, l'Agent C déclenche une recherche transversale dans les données déjà cartographiées par la plateforme. Il constitue un dossier DSAR, calcule les échéances, prépare une réponse officielle et conserve les traces nécessaires au suivi du traitement. Lorsque la demande provient d'une boîte mail, l'agent peut également en extraire les informations utiles afin de les transformer en demande exploitable.
+
+\begin{table}[H]
+\centering
+\caption{Sorties produites par l'Agent C}
+\label{tab:outputs_agent_c}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|p{3.2cm}|}
+\hline
+\textbf{Sortie} & \textbf{Contenu} & \textbf{Usage principal} \\
+\hline
+\texttt{q5\_droits} & Qualification retenue, motif, recherches, délais, réponse préparée & Lecture DPO + état partagé \\
+\hline
+Dossier DSAR & Données retrouvées, pièces, statuts, historique d'exécution & Suivi réglementaire \\
+\hline
+Réponse officielle & Message ou courrier prêt à être validé & Communication au demandeur \\
+\hline
+Journal d'exécution & Dates, statut, mode d'exécution, remarques & Audit et traçabilité \\
+\hline
+\end{tabularx}
+\end{table}
+
+L'agent ne remplace toutefois pas le contrôle humain. Il prépare le travail, structure les résultats et facilite le suivi, mais les décisions les plus sensibles restent validées par le DPO avant exécution.
+
+\subsection{Observation}
+
+L'Agent C contrôle la complétude des résultats retrouvés, la cohérence entre le type de droit et la réponse préparée, ainsi que le respect des délais. Il vérifie aussi si la demande nécessite une intervention humaine complémentaire, par exemple lorsqu'elle est ambiguë, incomplète ou juridiquement sensible.
+
+Cette phase d'observation est essentielle, car une réponse incomplète ou tardive peut constituer un risque réglementaire important. L'agent vérifie donc autant la qualité de la recherche que la cohérence de la réponse proposée. Cette étape contribue à fiabiliser le traitement avant sa validation finale.
+
+\subsection{Adaptation}
+
+Les retours du DPO sur les réponses générées, les demandes mal qualifiées ou les recherches incomplètes sont stockés et réutilisés. Cette adaptation permet d'améliorer progressivement la qualité des réponses, le choix des critères de recherche et la formulation des courriers officiels.
+
+Dans notre démarche, cette adaptation permet surtout d'améliorer la qualité du service rendu au fil des cas rencontrés. L'agent apprend ainsi à mieux distinguer les situations récurrentes, à mieux formuler les réponses et à mieux exploiter les informations déjà disponibles dans le système.
+
+\subsection{Remarques}
+
+Le Sprint 2 marque une évolution importante du projet. Grâce à l'Agent C, la plateforme ne se limite plus à l'analyse des traitements de données ; elle devient également capable d'accompagner l'organisation dans la gestion effective des droits des personnes. C'est donc une étape qui renforce fortement la dimension concrète et réglementaire de notre solution.
+
+\section{Implémentation de l'agent 3}
+
+Sur le plan de l'implémentation, ce sprint nous a permis d'intégrer l'agent DSAR à la plateforme et de relier son fonctionnement aux mécanismes de suivi déjà présents. Nous avons également prévu la prise en charge de différents modes de réception des demandes, afin de rapprocher la solution des conditions d'usage réelles dans l'entreprise. Cette intégration a rendu possible un suivi plus fluide, plus centralisé et mieux documenté des demandes reçues.
+
+\paragraph{Captures d'écran}
+
+Les figures les plus pertinentes à intégrer dans cette partie sont synthétisées ci-dessous.
+
+\begin{table}[H]
+\centering
+\caption{Captures recommandées --- Sprint 2}
+\label{tab:captures_sprint2}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.2cm}|}
+\hline
+\textbf{Capture} & \textbf{Intérêt dans le rapport} & \textbf{Section conseillée} \\
+\hline
+Formulaire d'enregistrement DSAR & Montre la perception initiale de l'Agent C & Début implémentation Sprint 2 \\
+\hline
+Message mail transformé en demande & Illustre l'intégration Microsoft 365 ou IMAP & Après Perception Agent C \\
+\hline
+Résultat de recherche transversale & Visualise l'action de l'agent sur les données retrouvées & Après Action Agent C \\
+\hline
+Fiche DSAR avec délais et statut & Montre l'observation et le suivi temporel & Fin Sprint 2 \\
+\hline
+Réponse officielle générée & Met en valeur la sortie métier du sprint & Fin d'implémentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Captures d'écran / schémas d'implémentation du Sprint 2 à insérer ici] \vspace{4cm}}}
+\caption{Implémentation de l'agent 3}
+\label{fig:realisation_sprint2}
+\end{figure}
+
+\paragraph{Remarques}
+
+L'apport majeur du Sprint 2 réside dans la centralisation du traitement DSAR. Nous avons ainsi transformé une obligation légale souvent dispersée et manuelle en un processus mieux structuré, plus traçable et plus facile à piloter.
+
+\section{Conclusion}
+
+Le Sprint 2 a permis de mettre en œuvre l'agent de gestion des droits DSAR et d'automatiser la qualification, le suivi et la préparation des réponses aux demandes des personnes concernées. Il prépare directement la gouvernance DPO du sprint suivant en enrichissant la base de connaissances opérationnelle du système.
+
+% ==================================================
+\chapter{Sprint 3 : Agent de gestion des rapports DPO}
+
+\section{Introduction}
+
+Ce chapitre correspond au troisième sprint de développement. Au cours de cette étape, nous avons conçu l'agent de gouvernance DPO, chargé de consolider les résultats des agents précédents et de proposer une vision synthétique de la conformité globale de l'organisation. Ce sprint nous a permis de faire évoluer la plateforme d'une logique d'analyse et de traitement vers une logique de pilotage.
+
+\section{Objectif du Sprint}
+
+L'objectif du Sprint 3 est de transformer les analyses produites par les sprints précédents en une gouvernance centralisée, exploitable par le DPO. Dans cette optique, nous avons voulu calculer un score global de maturité, hiérarchiser les priorités d'action, produire des rapports structurés et mieux organiser les preuves et les validations. L'enjeu n'était plus seulement d'analyser des cas isolés, mais de donner une lecture d'ensemble de la posture RGPD.
+
+\section{Use Case détaillé}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{5cm} [Diagramme de cas d'utilisation détaillé --- Sprint 3 à insérer ici] \vspace{5cm}}}
+\caption{Use Case détaillé --- Sprint 3}
+\label{fig:use_case_sprint3}
+\end{figure}
+
+Le cas d'utilisation principal de ce sprint peut être formulé comme suit : \textit{En tant que DPO, je veux disposer d'un agent capable de consolider les résultats des analyses, des risques, des incidents et des DSAR, afin de piloter la conformité globale, de prioriser les actions et de produire des rapports de gouvernance exploitables.}
+
+\section{Sprint Backlog}
+
+\begin{table}[H]
+\centering
+\caption{Sprint Backlog --- Sprint 3}
+\label{tab:backlog_sprint3}
+\begin{tabularx}{\textwidth}{|c|X|c|}
+\hline
+\textbf{Id-US} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-DPO01 & En tant que DPO, je veux consulter un cockpit centralisé avec le score global de conformité. & Élevée \\
+\hline
+US-DPO02 & En tant que DPO, je veux accéder aux preuves de conformité consolidées pour audits et contrôles. & Élevée \\
+\hline
+US-DPO03 & En tant que DPO, je veux consulter les recommandations d'amélioration continue. & Moyenne \\
+\hline
+US-DPO04 & En tant que DPO, je veux disposer d'un rapport de gouvernance structuré. & Élevée \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Agent de gestion des rapports DPO --- Agent D}
+
+Dans ce sprint, nous avons développé un agent dédié à la gouvernance DPO. Son rôle est de rassembler les résultats issus des agents précédents afin de fournir une vision plus claire, plus synthétique et plus utile pour la prise de décision. Cet agent n'intervient donc pas au niveau d'un traitement isolé, mais au niveau de la gouvernance globale de la conformité.
+
+\begin{table}[H]
+\centering
+\caption{Cycle de vie agentique de l'Agent D}
+\label{tab:cycle_agent_d}
+\begin{tabularx}{\textwidth}{|p{2.2cm}|X|X|X|}
+\hline
+\textbf{Phase} & \textbf{Ce qui est utilisé} & \textbf{Ce qui n'est pas mobilisé directement} & \textbf{Résultat principal} \\
+\hline
+Perception & Sorties A/B/C, actions, preuves, snapshots, validations DPO, historique SQLite & Connecteurs bruts QALITAS/GMAO, ingestion email DSAR, détection primaire des champs & Vue consolidée de gouvernance \\
+\hline
+Raisonnement & Agrégation d'indicateurs, hiérarchisation, RAG, préparation du contexte de rapport & Détection terrain des incidents, classification DSAR initiale & Score de maturité et priorités \\
+\hline
+Action & Génération du cockpit, rapport DPO, recommandations, snapshots de gouvernance & Qualification initiale des traitements, notification d'incident unitaire & Synthèse décisionnelle \\
+\hline
+Observation & Contrôle de cohérence des agrégats, couverture des preuves et alertes & Audit externe final, validation réglementaire par autorité & Vérification de lisibilité et de cohérence \\
+\hline
+Adaptation & Feedback DPO, validations, mémoire de gouvernance, comparaison temporelle & Réécriture automatique des règles métier des autres agents & Amélioration de la synthèse \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Perception}
+
+La perception de l'Agent D repose sur l'ensemble des résultats déjà produits dans la plateforme. Contrairement aux agents précédents, il ne travaille pas sur une demande ou sur un traitement unique, mais sur un ensemble d'informations déjà consolidées : scores de conformité, risques, incidents, demandes DSAR, actions en cours et preuves enregistrées.
+
+\begin{table}[H]
+\centering
+\caption{Données perçues par l'Agent D}
+\label{tab:perception_agent_d}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|p{2.7cm}|}
+\hline
+\textbf{Source} & \textbf{Données utilisées} & \textbf{Rôle dans la perception} & \textbf{Mobilisation} \\
+\hline
+Agent A & Scores de conformité, registre, bases légales, écarts & Fournit la lecture conformité du système & Directe \\
+\hline
+Agent B & Matrice de risques, incidents, AIPD, actions associées & Introduit l'exposition au risque et les urgences & Directe \\
+\hline
+Agent C & DSAR, délais, recherches, réponses préparées & Intègre la dimension droits des personnes & Directe \\
+\hline
+SQLite / historique & Snapshots, validations DPO, preuves, actions ouvertes ou clôturées & Donne une mémoire de gouvernance dans le temps & Directe \\
+\hline
+Données non utilisées à ce stade & Détection brute de champs, lecture primaire des connecteurs, synchronisation mail temps réel & Déjà traitées par d'autres briques & Non mobilisées \\
+\hline
+\end{tabularx}
+\end{table}
+
+Il s'appuie également sur l'historique et sur les validations déjà enregistrées afin de replacer l'analyse dans une perspective plus large. L'idée est de lui permettre de comprendre non seulement l'état courant de la conformité, mais aussi son évolution dans le temps.
+
+\subsection{Raisonnement}
+
+L'agent raisonne à partir d'un ensemble hétérogène d'indicateurs qu'il transforme en vue décisionnelle. Il calcule un score global de maturité, identifie les points critiques, hiérarchise les recommandations et prépare un contexte structuré pour la génération du rapport DPO. La couche RAG est utilisée pour ajouter des références juridiques et de bonnes pratiques issues des publications de la CNIL et de l'EDPB \cite{cnil_site,edpb_site}.
+
+Le raisonnement de cet agent est donc un raisonnement de synthèse. Son objectif n'est pas de redétecter des problèmes élémentaires, mais d'interpréter les résultats déjà obtenus afin d'en faire ressortir les priorités, les faiblesses majeures et les pistes d'amélioration. Nous avons ainsi cherché à faire de cet agent un véritable outil de pilotage, capable de transformer des informations techniques en éléments de décision.
+
+\subsection{Action}
+
+À l'issue de son traitement, l'Agent D produit le cockpit de gouvernance, les priorités d'action, les recommandations consolidées et le rapport DPO. Il participe également à l'organisation des preuves, des validations et des actions correctives. Cette phase d'action donne ainsi au DPO une vue plus exploitable et plus stratégique de la conformité.
+
+\begin{table}[H]
+\centering
+\caption{Sorties produites par l'Agent D}
+\label{tab:outputs_agent_d}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|p{3.2cm}|}
+\hline
+\textbf{Sortie} & \textbf{Contenu} & \textbf{Usage principal} \\
+\hline
+\texttt{q7\_gouvernance} & Indicateurs, alertes, score de maturité, plan prioritaire & Cockpit DPO \\
+\hline
+\texttt{q8\_amelioration} & Faiblesses récurrentes, axes d'amélioration, recommandations & Amélioration continue \\
+\hline
+\texttt{rapport\_dpo} & Rapport de gouvernance structuré & Audit, revue de direction, contrôle \\
+\hline
+Snapshots & État de gouvernance à date donnée & Suivi historique et tendance \\
+\hline
+\end{tabularx}
+\end{table}
+
+L'agent n'intervient donc pas comme un outil de traitement opérationnel unitaire, mais comme une couche de synthèse et de pilotage. Sa valeur réside dans la capacité à rendre lisibles des résultats qui, autrement, resteraient dispersés.
+
+\subsection{Observation}
+
+L'Agent D vérifie la cohérence entre les données agrégées et les indicateurs restitués dans le cockpit. Il contrôle que les alertes critiques, les incidents, les DSAR et les preuves importantes sont correctement représentés dans le rapport et dans l'historique de gouvernance.
+
+Cette phase d'observation est essentielle, car une mauvaise synthèse peut fausser la lecture globale de la situation. L'agent veille donc à maintenir une cohérence entre les données agrégées et la vision finale restituée au DPO. Il contribue ainsi à rendre la gouvernance plus fiable et plus crédible.
+
+\subsection{Adaptation}
+
+La phase d'adaptation s'appuie sur les validations explicites du DPO et sur les évolutions observées dans les snapshots de gouvernance. L'agent ajuste progressivement ses priorités, sa logique de synthèse et la structure des rapports en fonction des usages réels et des arbitrages de l'expert métier.
+
+Cette adaptation est particulièrement utile pour affiner le niveau de détail attendu dans les rapports, la manière de hiérarchiser les priorités et la présentation des indicateurs. Nous avons ainsi cherché à rendre l'agent progressivement plus pertinent pour un usage réel de pilotage, tout en conservant un fonctionnement maîtrisé.
+
+\subsection{Remarques}
+
+L'Agent D marque le passage d'une plateforme analytique vers une plateforme de pilotage. Grâce à lui, nous avons pu donner au projet une dimension plus managériale, en mettant l'accent sur la synthèse, la priorisation et l'aide à la décision. C'est cette orientation qui donne à la plateforme une portée plus large que la simple analyse technique.
+
+\section{Implémentation de l'agent 4}
+
+Sur le plan de l'implémentation, ce sprint nous a permis d'intégrer la couche de gouvernance au reste de la plateforme. Nous avons organisé la restitution des indicateurs, la génération du rapport DPO et la capitalisation des validations et des preuves de manière à offrir au DPO un espace de suivi plus complet et plus structuré. Cette intégration a renforcé la continuité entre l'analyse, la décision et la documentation.
+
+\paragraph{Captures d'écran}
+
+Les figures à privilégier dans cette partie sont résumées dans le tableau suivant.
+
+\begin{table}[H]
+\centering
+\caption{Captures recommandées --- Sprint 3}
+\label{tab:captures_sprint3}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.2cm}|}
+\hline
+\textbf{Capture} & \textbf{Intérêt dans le rapport} & \textbf{Section conseillée} \\
+\hline
+Cockpit DPO & Montre la perception consolidée et la synthèse opérationnelle & Début implémentation Sprint 3 \\
+\hline
+Rapport DPO généré & Illustre la phase d'action de l'Agent D & Après Action Agent D \\
+\hline
+Vue des priorités / alertes & Met en évidence le raisonnement de hiérarchisation & Après Raisonnement Agent D \\
+\hline
+Historique des validations et preuves & Appuie l'observation et la traçabilité & Fin Sprint 3 \\
+\hline
+Snapshot de gouvernance & Montre la logique de suivi temporel & Fin implémentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Captures d'écran / schémas d'implémentation du Sprint 3 à insérer ici] \vspace{4cm}}}
+\caption{Implémentation de l'agent 4}
+\label{fig:realisation_sprint3}
+\end{figure}
+
+\paragraph{Remarques}
+
+Le Sprint 3 a permis d'ajouter une véritable couche décisionnelle au système. À ce stade, la plateforme ne se limite plus à analyser ou à traiter des cas isolés ; elle devient capable d'orienter l'action et de soutenir le pilotage global de la conformité.
+
+\section{Conclusion}
+
+Le Sprint 3 a permis de mettre en place l'agent de gouvernance DPO et de consolider l'ensemble des analyses précédentes dans un cockpit centralisé. Il constitue la base de la dernière étape du projet, à savoir l'orchestration complète des agents et l'intégration finale de la plateforme.
+
+% ==================================================
+\chapter{Sprint 4 : Orchestration entre les agents et architecture finale}
+
+\section{Introduction}
+
+Ce dernier sprint est consacré à l'intégration finale de la plateforme. Au cours de cette étape, nous avons cherché à relier l'ensemble des agents développés précédemment au sein d'une architecture cohérente, pilotée par un orchestrateur central. Ce sprint nous a également permis d'assurer l'intégration finale avec QALITAS WEB, GMAO PRO WEB et le tableau de bord destiné au DPO.
+
+\section{Objectif du Sprint}
+
+L'objectif du Sprint 4 est double. D'une part, il s'agit de mettre en place l'orchestration entre les agents afin qu'une requête unique puisse produire une réponse consolidée. D'autre part, il s'agit de finaliser l'architecture globale de la plateforme, en assurant la cohérence entre les composants développés, les sources de données, le stockage des résultats et les interfaces de restitution.
+
+\section{Use Case détaillé}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{5cm} [Diagramme de cas d'utilisation détaillé --- Sprint 4 à insérer ici] \vspace{5cm}}}
+\caption{Use Case détaillé --- Sprint 4}
+\label{fig:use_case_sprint4}
+\end{figure}
+
+Le cas d'utilisation central du Sprint 4 peut être résumé comme suit : \textit{En tant que DPO, je veux soumettre une requête globale et obtenir une réponse consolidée issue de la coopération des agents de conformité, de risques, de DSAR et de gouvernance, afin de piloter la conformité depuis une seule interface.}
+
+\section{Sprint Backlog}
+
+\begin{table}[H]
+\centering
+\caption{Sprint Backlog --- Sprint 4}
+\label{tab:backlog_sprint4}
+\begin{tabularx}{\textwidth}{|c|X|c|}
+\hline
+\textbf{Id-US} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US10 & En tant que DPO, je veux consulter un tableau de bord de synthèse de la conformité globale. & Moyenne \\
+\hline
+US-ORCH01 & En tant que DPO, je veux que les agents communiquent entre eux via un orchestrateur central. & Élevée \\
+\hline
+US-ORCH02 & En tant que DPO, je veux soumettre une requête unique et recevoir une réponse consolidée. & Élevée \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Orchestration entre les agents et architecture finale}
+
+Dans ce sprint, nous avons mis en place la logique d'orchestration entre les différents agents développés dans les étapes précédentes. L'objectif était de faire en sorte qu'ils ne fonctionnent plus comme des modules isolés, mais comme des composants capables de coopérer au sein d'une même chaîne de traitement. Cette orchestration constitue l'aboutissement du projet, car elle permet de transformer une succession d'analyses spécialisées en une plateforme intégrée et cohérente.
+
+\begin{table}[H]
+\centering
+\caption{Cycle de vie agentique appliqué à l'orchestrateur}
+\label{tab:cycle_orchestrateur}
+\begin{tabularx}{\textwidth}{|p{2.2cm}|X|X|X|}
+\hline
+\textbf{Phase} & \textbf{Ce qui est utilisé} & \textbf{Ce qui n'est pas fait directement} & \textbf{Résultat principal} \\
+\hline
+Perception & Requête globale, \texttt{RGPDState}, contexte utilisateur, données déjà persistées & Analyse juridique détaillée, qualification DSAR, calcul de risque métier & État d'entrée cohérent \\
+\hline
+Raisonnement & Définition du graphe, ordre d'exécution, dépendances entre agents, conditions d'enchaînement & Réécriture des résultats des agents, scoring RGPD propre & Workflow adapté à la requête \\
+\hline
+Action & Exécution séquentielle A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ D, consolidation et restitution API & Décision métier à la place des agents, validation DPO finale & Réponse consolidée \\
+\hline
+Observation & Suivi des erreurs, contrôle des sorties, état d'exécution, monitoring & Audit réglementaire de fond, requalification métier manuelle & Traçabilité du workflow \\
+\hline
+Adaptation & Ajustement du routage, exécutions partielles, amélioration de l'intégration & Retrain des modèles, modification directe des règles RGPD & Architecture plus robuste et souple \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Perception}
+
+La phase de perception de l'orchestrateur consiste à recevoir la requête globale du DPO et à identifier le contexte qui devra être transmis aux différents agents. Dans notre cas, cette requête peut concerner une analyse complète, un incident, une demande DSAR ou une consultation de synthèse. L'orchestrateur ne réalise pas lui-même l'analyse métier détaillée ; il prépare surtout la circulation des informations nécessaires entre les différents composants.
+
+\begin{table}[H]
+\centering
+\caption{Entrées perçues par l'orchestrateur}
+\label{tab:perception_orchestrateur}
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|p{2.7cm}|}
+\hline
+\textbf{Source} & \textbf{Données utilisées} & \textbf{Rôle dans la perception} & \textbf{Mobilisation} \\
+\hline
+Requête API & Traitement, incident, demande DSAR, contexte de l'utilisateur & Construit l'état d'entrée \texttt{RGPDState} & Directe \\
+\hline
+FastAPI & Routage, authentification, endpoints métiers, exécution modulaire & Détermine le mode d'exécution & Directe \\
+\hline
+SQLite / historique & Contexte déjà persistant, snapshots, traces, audit & Complète les sorties des agents ou les consultations & Indirecte \\
+\hline
+Sorties des agents & Blocs \texttt{agent\_a\_output}, \texttt{agent\_b\_output}, \texttt{agent\_c\_output}, \texttt{agent\_d\_output} & Transporte l'information entre les nœuds du graphe & Progressive \\
+\hline
+Données non utilisées directement & Décision DPO finale, interprétation juridique fine, contenu métier autonome & Déléguées aux agents spécialisés ou à l'humain & Non mobilisées \\
+\hline
+\end{tabularx}
+\end{table}
+
+Il récupère également les informations déjà disponibles dans la plateforme afin de construire un état d'entrée cohérent. Son rôle, à ce niveau, est donc surtout organisationnel : il rassemble, prépare et distribue l'information aux bons agents.
+
+\subsection{Raisonnement}
+
+La phase de raisonnement de l'orchestrateur consiste à déterminer l'enchaînement le plus adapté au besoin exprimé. Nous avons donc défini une logique de circulation dans laquelle chaque agent intervient à un moment précis et transmet ses résultats au suivant. Cette organisation permet de garder un déroulement clair, compréhensible et cohérent avec la progression naturelle de l'analyse.
+
+Dans l'état actuel de notre projet, cette orchestration reste principalement séquentielle. Ce choix est volontaire, car il nous a permis de privilégier la lisibilité, la traçabilité et la cohérence globale du système. Le rôle de l'orchestrateur n'est pas de refaire le travail des agents, mais de garantir leur bonne coopération.
+
+\subsection{Action}
+
+La phase d'action de l'orchestrateur consiste à lancer les agents dans l'ordre prévu, à récupérer leurs résultats, puis à les restituer de manière consolidée. C'est à ce niveau que la plateforme prend toute sa cohérence, puisque les différentes briques développées dans les sprints précédents commencent à fonctionner ensemble dans un même parcours utilisateur.
+
+L'orchestrateur ne produit donc pas, à lui seul, l'analyse réglementaire. En revanche, il rend possible la coopération entre tous les agents de la plateforme. C'est cette fonction d'assemblage qui permet de passer d'un ensemble de modules spécialisés à une solution réellement intégrée.
+
+\subsection{Observation}
+
+L'orchestrateur observe l'état d'exécution de chaque étape, détecte les erreurs, contrôle la cohérence globale des résultats et conserve les traces dans SQLite. Il surveille aussi les performances et les événements temps réel afin de détecter les variations importantes dans les sources ou les temps de traitement.
+
+Cette observation est indispensable pour rendre le système exploitable dans la durée. Elle permet de détecter les blocages éventuels, de vérifier que les sorties sont bien produites et de conserver une trace du déroulement global. Elle joue donc un rôle important dans la robustesse de la solution finale.
+
+\subsection{Adaptation}
+
+La phase d'adaptation permet d'ajuster la stratégie d'orchestration en fonction des retours d'usage, des performances observées et des besoins fonctionnels réels. L'architecture séquentielle actuelle constitue ainsi une base évolutive vers des scénarios plus dynamiques, des conditions de reprise ou des exécutions partielles spécialisées.
+
+Cette adaptation ouvre la voie à des évolutions futures, qu'il s'agisse d'un enrichissement du routage, d'une meilleure gestion des cas particuliers ou d'une exécution plus flexible selon le besoin formulé. Elle montre que l'architecture retenue peut évoluer sans remettre en cause les fondations du projet.
+
+\subsection{Remarques}
+
+Le Sprint 4 ne se limite pas à l'assemblage des agents. Il donne au projet sa cohérence finale en intégrant l'orchestration, l'architecture applicative, la persistance, le suivi des traces et les connecteurs métiers dans une seule plateforme exploitable. L'orchestrateur n'est donc pas un agent métier supplémentaire ; il représente la couche de coordination qui donne au projet sa forme finale.
+
+\section{Implémentation de l'orchestrateur et intégration finale}
+
+L'implémentation finale nous a permis de réunir l'ensemble des composants développés jusque-là dans une seule architecture fonctionnelle. Nous avons ainsi assuré la liaison entre les agents, les sources de données, les mécanismes de persistance, les modules de restitution et le tableau de bord final. Cette étape a été essentielle pour donner au projet sa dimension complète et démontrer que la solution pouvait fonctionner comme une plateforme unifiée.
+
+\paragraph{Captures d'écran}
+
+Les illustrations les plus pertinentes à intégrer sont résumées dans le tableau suivant.
+
+\begin{table}[H]
+\centering
+\caption{Captures recommandées --- Sprint 4}
+\label{tab:captures_sprint4}
+\begin{tabularx}{\textwidth}{|p{3.4cm}|X|p{3.2cm}|}
+\hline
+\textbf{Capture} & \textbf{Intérêt dans le rapport} & \textbf{Section conseillée} \\
+\hline
+Schéma du workflow A $\rightarrow$ B $\rightarrow$ C $\rightarrow$ D & Montre clairement l'architecture d'orchestration & Début Sprint 4 \\
+\hline
+Exécution complète d'une requête globale & Illustre la phase d'action de l'orchestrateur & Après Action orchestrateur \\
+\hline
+Vue du tableau de bord global & Met en évidence la restitution consolidée au DPO & Implémentation finale \\
+\hline
+Événements ou snapshots temps réel & Appuie la phase d'observation et le monitoring & Fin Sprint 4 \\
+\hline
+Écran de gestion des consentements ou assistant DPO & Montre l'intégration fonctionnelle finale & Fin implémentation \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Schéma d'orchestration multi-agents à insérer ici] \vspace{4cm}}}
+\caption{Architecture finale du module multi-agents}
+\label{fig:orchestration_sprint4}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{14cm}{\centering \vspace{4cm} [Captures d'écran du tableau de bord et de l'orchestrateur à insérer ici] \vspace{4cm}}}
+\caption{Implémentation finale : orchestrateur et tableau de bord}
+\label{fig:realisation_sprint4}
+\end{figure}
+
+\paragraph{Remarques}
+
+Le Sprint 4 clôt la construction fonctionnelle du projet. Il nous a permis de faire converger l'ensemble des agents, des connecteurs et des composants intelligents vers une architecture finale unifiée, plus proche d'un usage réel au sein de l'entreprise.
+
+\section{Conclusion}
+
+Ce sprint final a permis d'assurer l'orchestration entre les agents et de finaliser l'architecture globale de la plateforme, y compris son intégration avec QALITAS WEB et GMAO PRO WEB. La plateforme dispose désormais d'une chaîne complète allant de l'analyse de conformité jusqu'à la gouvernance consolidée.
+
+% ==================================================
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+
+Ce projet de fin d'études a permis de concevoir et de réaliser une plateforme d'agents IA dédiée à la conformité RGPD, appliquée aux logiciels QALITAS WEB et GMAO PRO WEB de TIM. La solution mise en place dépasse une simple logique documentaire : elle centralise les traitements, automatise l'analyse de conformité, structure l'évaluation des risques, assiste la gestion des DSAR, gère les incidents et fournit au DPO un cockpit de gouvernance basé sur des preuves exploitables.
+
+Sur le plan technique, le projet s'appuie sur une architecture hybride combinant agents spécialisés, orchestrateur LangGraph, backend FastAPI, base SQLite, moteur de règles, RAG juridique, modèle LLaMA via Groq et classifieurs de machine learning. Cette approche a permis de construire une plateforme modulaire, évolutive et proche des réalités métier de l'entreprise.
+
+Au-delà de ce noyau, la plateforme intègre également des modules applicatifs complémentaires qui renforcent sa valeur opérationnelle : contrôle d'accès par rôles, audit des opérations sensibles, synchronisation de boîtes mail DSAR, scan de documents non structurés, gestion des actions correctives et des preuves, validations DPO, mémoire de feedback, gestion du consentement, monitoring temps réel et assistant DPO. L'originalité du projet réside ainsi dans la combinaison d'un moteur de règles déterministe, d'une base de connaissances juridique, d'une couche RAG, d'une génération LLM ciblée, d'une persistance orientée preuve et d'une validation humaine explicite.
+
+Comme perspectives, plusieurs évolutions peuvent être envisagées : enrichissement des connecteurs, automatisation plus poussée des workflows, extension des mécanismes de veille réglementaire, ajout de nouveaux agents spécialisés, ou encore industrialisation du système dans un environnement cloud sécurisé.
+
+% ==================================================
+% Références
+% ==================================================
+\renewcommand{\bibname}{Références}
+\begin{thebibliography}{99}
+
+\bibitem{rgpd}
+Parlement européen et Conseil de l'Union européenne. \textit{Règlement (UE) 2016/679 du 27 avril 2016 relatif à la protection des personnes physiques à l'égard du traitement des données à caractère personnel et à la libre circulation de ces données}. Journal officiel de l'Union européenne, L 119, p. 1--88, 4 mai 2016. [En ligne]. Disponible sur : \url{https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32016R0679}
+
+\bibitem{inpdp}
+Instance Nationale de Protection des Données Personnelles (INPDP). \textit{Loi organique n° 2004-63 du 27 juillet 2004 portant sur la protection des données à caractère personnel}. [En ligne]. Disponible sur : \url{https://www.inpdp.nat.tn}
+
+\bibitem{tim_site}
+TIM --- Technologies Industrielles et Management. \textit{Site officiel}. [En ligne]. Disponible sur : \url{https://www.tim-tunisie.com}
+
+\bibitem{qalitas_doc}
+TIM. \textit{Documentation QALITAS WEB}. [Document interne]. TIM Tunisie, 2024.
+
+\bibitem{gmao_doc}
+TIM. \textit{Documentation GMAO PRO WEB}. [Document interne]. TIM Tunisie, 2024.
+
+\bibitem{royce_waterfall}
+Royce, W. W. \textit{Managing the Development of Large Software Systems}. Proceedings of IEEE WESCON, vol. 26, p. 1--9, 1970.
+
+\bibitem{forsberg_v_model}
+Forsberg, K. et Mooz, H. \textit{The Relationship of System Engineering to the Project Cycle}. Proceedings of the First Annual Symposium of National Council on Systems Engineering, 1991.
+
+\bibitem{boehm_spiral}
+Boehm, B. W. \textit{A Spiral Model of Software Development and Enhancement}. ACM SIGSOFT Software Engineering Notes, vol. 11, n° 4, p. 14--24, 1986.
+
+\bibitem{kruchten_rup}
+Kruchten, P. \textit{The Rational Unified Process: An Introduction}. 3\textsuperscript{e} édition. Addison-Wesley, 2003.
+
+\bibitem{beck_agile}
+Beck, K. et al. \textit{Manifeste pour le développement Agile de logiciels}. 2001. [En ligne]. Disponible sur : \url{https://agilemanifesto.org/iso/fr/manifesto.html}
+
+\bibitem{schwaber_scrum}
+Schwaber, K. et Sutherland, J. \textit{Le Guide Scrum --- Les règles du jeu}. Scrum.org, 2020. [En ligne]. Disponible sur : \url{https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-French.pdf}
+
+\bibitem{anderson_kanban}
+Anderson, D. J. \textit{Kanban: Successful Evolutionary Change for Your Technology Business}. Blue Hole Press, 2010.
+
+\bibitem{beck_xp}
+Beck, K. \textit{Extreme Programming Explained: Embrace Change}. 2\textsuperscript{e} édition. Addison-Wesley, 2004.
+
+\bibitem{leffingwell_safe}
+Leffingwell, D. \textit{SAFe 5.0 Distilled: Achieving Business Agility with the Scaled Agile Framework}. Addison-Wesley, 2020.
+
+\bibitem{wooldridge_agents}
+Wooldridge, M. \textit{An Introduction to MultiAgent Systems}. 2\textsuperscript{e} édition. John Wiley \& Sons, 2009.
+
+\bibitem{chase_langgraph}
+Chase, H. et al. \textit{LangGraph: Building Stateful, Multi-Actor Applications with LLMs}. LangChain, 2024. [En ligne]. Disponible sur : \url{https://langchain-ai.github.io/langgraph/}
+
+\bibitem{langgraph_overview}
+LangChain. \textit{LangGraph overview}. [En ligne]. Disponible sur : \url{https://docs.langchain.com/oss/python/langgraph/overview}
+
+\bibitem{fastapi_doc}
+Ramírez, S. \textit{FastAPI --- Modern, Fast Web Framework for Building APIs with Python}. 2019. [En ligne]. Disponible sur : \url{https://fastapi.tiangolo.com}
+
+\bibitem{fastapi_oauth2}
+FastAPI. \textit{Simple OAuth2 with Password and Bearer}. [En ligne]. Disponible sur : \url{https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/}
+
+\bibitem{reimers_sbert}
+Reimers, N. et Gurevych, I. \textit{Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks}. Proceedings of EMNLP 2019. [En ligne]. Disponible sur : \url{https://www.sbert.net}
+
+\bibitem{meta_llama}
+Meta AI. \textit{LLaMA 3: Open Foundation and Fine-Tuned Chat Models}. Meta AI Research, 2024. [En ligne]. Disponible sur : \url{https://ai.meta.com/llama/}
+
+\bibitem{groq_doc}
+Groq Inc. \textit{Groq API Documentation --- Fast AI Inference}. 2024. [En ligne]. Disponible sur : \url{https://console.groq.com/docs/}
+
+\bibitem{sklearn_tfidf}
+scikit-learn. \textit{TfidfVectorizer}. [En ligne]. Disponible sur : \url{https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html}
+
+\bibitem{sklearn_logreg}
+scikit-learn. \textit{LogisticRegression}. [En ligne]. Disponible sur : \url{https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html}
+
+\bibitem{cnil_site}
+Commission Nationale de l'Informatique et des Libertés (CNIL). \textit{Site officiel --- Guides et recommandations RGPD}. [En ligne]. Disponible sur : \url{https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on}
+
+\bibitem{edpb_site}
+European Data Protection Board (EDPB). \textit{Guidelines and Recommendations}. [En ligne]. Disponible sur : \url{https://www.edpb.europa.eu/our-work-tools/general-guidance/guidelines-recommendations-best-practices_en}
+
+\bibitem{cnil_aipd}
+Commission Nationale de l'Informatique et des Libertés. \textit{Ce qu'il faut savoir sur l'analyse d'impact relative à la protection des données (AIPD)}. [En ligne]. Disponible sur : \url{https://www.cnil.fr/fr/ce-quil-faut-savoir-sur-lanalyse-dimpact-relative-la-protection-des-donnees-aipd}
+
+\bibitem{cnil_breach}
+Commission Nationale de l'Informatique et des Libertés. \textit{Notifier une violation de données personnelles}. [En ligne]. Disponible sur : \url{https://www.cnil.fr/fr/notifier-une-violation-de-donnees-personnelles}
+
+\bibitem{ms_graph_mailfolder}
+Microsoft Learn. \textit{mailFolder resource type}. [En ligne]. Disponible sur : \url{https://learn.microsoft.com/en-us/graph/api/resources/mailfolder?view=graph-rest-1.0}
+
+\bibitem{ms_graph_list_mailfolders}
+Microsoft Learn. \textit{List mailFolders}. [En ligne]. Disponible sur : \url{https://learn.microsoft.com/en-us/graph/api/user-list-mailfolders?view=graph-rest-1.0}
+
+\bibitem{python_imaplib}
+Python Software Foundation. \textit{imaplib --- IMAP4 protocol client}. [En ligne]. Disponible sur : \url{https://docs.python.org/3/library/imaplib.html}
+
+\bibitem{python_email}
+Python Software Foundation. \textit{email --- An email and MIME handling package}. [En ligne]. Disponible sur : \url{https://docs.python.org/3/library/email.html}
+
+\end{thebibliography}
+\end{document}

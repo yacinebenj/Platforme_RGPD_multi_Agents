@@ -1,0 +1,96 @@
+% Required in the report preamble:
+% \usepackage{tikz}
+% \usetikzlibrary{shapes.geometric}
+% \usepackage{graphicx}
+% \usepackage{float}
+
+\subsection{Diagramme de cas d'utilisation}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    actor/.style={
+        draw,
+        minimum width=2.1cm,
+        minimum height=0.9cm,
+        align=center,
+        font=\small
+    },
+    usecase/.style={
+        draw,
+        ellipse,
+        minimum width=5.2cm,
+        minimum height=1.15cm,
+        align=center,
+        font=\small
+    },
+    system/.style={
+        draw,
+        rounded corners=6pt,
+        minimum width=17cm,
+        minimum height=15.2cm
+    },
+    relation/.style={-},
+    include/.style={->, dashed, font=\scriptsize},
+    extend/.style={->, dashed, font=\scriptsize}
+]
+
+% Actor
+\node[actor] (dpo) at (-10.2, 0) {DPO};
+
+% System boundary
+\node[system, label={[font=\bfseries]above:Plateforme multi-agents de conformite RGPD}] (sys) at (0,0) {};
+
+% DPO use cases
+\node[usecase] (analyse) at (-3.7, 5.95) {Lancer une analyse\\de conformite};
+\node[usecase] (source) at (3.9, 5.95) {Selectionner une source\\de donnees};
+\node[usecase] (documents) at (3.9, 4.15) {Soumettre des documents\\a analyser};
+
+\node[usecase] (results) at (-3.7, 3.35) {Consulter les resultats\\d'analyse};
+\node[usecase] (register) at (3.9, 2.65) {Consulter le registre\\des traitements};
+\node[usecase] (proofs) at (3.9, 0.95) {Consulter l'historique\\et les preuves};
+
+\node[usecase] (legal) at (-3.7, 1.15) {Gerer les bases legales\\et consentements};
+\node[usecase] (risk) at (-3.7, -0.75) {Demander une evaluation\\des risques et AIPD};
+\node[usecase] (incident) at (-3.7, -2.65) {Declarer et suivre\\un incident};
+
+\node[usecase] (dsar) at (3.9, -1.2) {Traiter une demande\\d'exercice des droits};
+\node[usecase] (response) at (3.9, -3.0) {Generer une reponse\\DSAR};
+\node[usecase] (notification) at (3.9, -4.8) {Generer un dossier\\de notification};
+
+\node[usecase] (dashboard) at (-3.7, -4.85) {Consulter le cockpit\\DPO};
+\node[usecase] (validate) at (-3.7, -6.65) {Valider les decisions\\et actions correctives};
+\node[usecase] (report) at (3.9, -6.65) {Generer un rapport\\de gouvernance};
+
+% DPO associations
+\draw[relation] (dpo) -- (analyse);
+\draw[relation] (dpo) -- (documents);
+\draw[relation] (dpo) -- (results);
+\draw[relation] (dpo) -- (legal);
+\draw[relation] (dpo) -- (risk);
+\draw[relation] (dpo) -- (incident);
+\draw[relation] (dpo) -- (dsar);
+\draw[relation] (dpo) -- (dashboard);
+\draw[relation] (dpo) -- (validate);
+\draw[relation] (dpo) -- (report);
+
+% Include relations: mandatory sub-functions from the DPO point of view
+\draw[include] (analyse) -- node[above, sloped] {$\ll$include$\gg$} (source);
+\draw[include] (analyse) -- node[above, sloped] {$\ll$include$\gg$} (results);
+\draw[include] (results) -- node[above, sloped] {$\ll$include$\gg$} (register);
+\draw[include] (results) -- node[above, sloped] {$\ll$include$\gg$} (proofs);
+\draw[include] (dsar) -- node[above, sloped] {$\ll$include$\gg$} (response);
+\draw[include] (incident) -- node[above, sloped] {$\ll$include$\gg$} (notification);
+\draw[include] (dashboard) -- node[above, sloped] {$\ll$include$\gg$} (proofs);
+
+% Extend relations: optional actions depending on the analysis outcome
+\draw[extend] (validate) -- node[above, sloped] {$\ll$extend$\gg$} (results);
+\draw[extend] (risk) -- node[above, sloped] {$\ll$extend$\gg$} (analyse);
+\draw[extend] (report) -- node[above, sloped] {$\ll$extend$\gg$} (dashboard);
+
+\end{tikzpicture}%
+}
+\caption{Diagramme de cas d'utilisation de la plateforme RGPD du point de vue du DPO}
+\label{fig:use-case-rgpd}
+\end{figure}
