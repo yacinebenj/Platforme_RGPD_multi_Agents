@@ -7,12 +7,16 @@ Credentials are read from key.env and are never hardcoded.
 
 import logging
 import os
-import re
 import threading
 import time
 
 import requests
 from dotenv import load_dotenv
+from integrations.source_connector_base import (
+    extract_csrf_token,
+    fetch_records_from_endpoints,
+    get_id_from_list,
+)
 
 load_dotenv("key.env")
 
@@ -103,20 +107,7 @@ class QalitasConnector:
 
     def _get_id_from_list(self, items: list, name_key: str, target_name: str) -> str:
         """Find ID in a list of dicts by matching target_name against common name keys."""
-        id_keys = ["Id", "id", "Value", "value", "ID"]
-        name_keys = [name_key, "Name", "name", "Label", "label", "text", "Text"]
-        for item in items:
-            for nk in name_keys:
-                val = str(item.get(nk, ""))
-                if target_name.lower() in val.lower():
-                    for ik in id_keys:
-                        if ik in item:
-                            return str(item[ik])
-        if items:
-            for ik in id_keys:
-                if ik in items[0]:
-                    return str(items[0][ik])
-        return ""
+        return get_id_from_list(items, name_key, target_name)
 
     def _fetch_login_ids(self) -> tuple:
         """Fetch Company, Group, Site IDs needed for QALITAS login form."""
@@ -238,13 +229,7 @@ class QalitasConnector:
             raise
 
     def _extract_csrf_token(self, html: str) -> str:
-        match = re.search(r'<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]+)"', html)
-        if match:
-            return match.group(1)
-        match = re.search(r'<meta[^>]*name="__RequestVerificationToken"[^>]*content="([^"]+)"', html)
-        if match:
-            return match.group(1)
-        return ""
+        return extract_csrf_token(html)
 
     def fetch(
         self,
@@ -260,65 +245,17 @@ class QalitasConnector:
             raise ValueError(f"Unknown module: {module}")
         timeout = QALITAS_FETCH_TIMEOUT if timeout is None else timeout
         retry_timeout = QALITAS_RETRY_TIMEOUT if retry_timeout is None else retry_timeout
-
-        last_error = None
-        preferred_error = None
-        for endpoint in endpoints:
-            url = f"{self.base_url}{endpoint}"
-            try:
-                resp = self.session.get(url, params=params, timeout=timeout, verify=False)
-                if resp.status_code == 404:
-                    last_error = requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
-                    continue
-                resp.raise_for_status()
-                content_type = resp.headers.get("Content-Type", "")
-                print(f"[QALITAS] Fetch {module} via {endpoint} - Content-Type: {content_type}")
-                print(f"[QALITAS] Response preview: {resp.text[:300]}")
-                if "html" in content_type or resp.text.strip().startswith("<"):
-                    print("[QALITAS] Got HTML - session expired, re-logging in")
-                    self.logged_in = False
-                    self.login(force=True)
-                    resp = self.session.get(url, params=params, timeout=timeout, verify=False)
-                    if resp.status_code == 404:
-                        last_error = requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
-                        continue
-                    resp.raise_for_status()
-
-                data = resp.json()
-                if isinstance(data, list):
-                    return data
-                if isinstance(data, dict):
-                    for key in ["data", "Data", "items", "Items", "result", "Result", "value"]:
-                        if key in data and isinstance(data[key], list):
-                            return data[key]
-                    return [data]
-                return []
-            except Exception as e:
-                last_error = e
-                if preferred_error is None:
-                    preferred_error = e
-                logging.warning(f"[QALITAS] Fetch attempt failed for {module} via {endpoint}: {e}")
-                if retry_timeout and "timed out" in str(e).lower():
-                    try:
-                        resp = self.session.get(url, params=params, timeout=retry_timeout, verify=False)
-                        if resp.status_code == 404:
-                            last_error = requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
-                            continue
-                        resp.raise_for_status()
-                        data = resp.json()
-                        if isinstance(data, list):
-                            return data
-                        if isinstance(data, dict):
-                            for key in ["data", "Data", "items", "Items", "result", "Result", "value"]:
-                                if key in data and isinstance(data[key], list):
-                                    return data[key]
-                            return [data]
-                    except Exception as retry_err:
-                        last_error = retry_err
-
-        final_error = preferred_error or last_error
-        logging.error(f"[QALITAS] Fetch error for {module}: {final_error}")
-        raise final_error
+        return fetch_records_from_endpoints(
+            session=self.session,
+            base_url=self.base_url,
+            module=module,
+            endpoints=endpoints,
+            request_params=params,
+            timeout=timeout,
+            retry_timeout=retry_timeout,
+            source_name="QALITAS",
+            relogin=lambda: self.login(force=True),
+        )
 
     def logout(self):
         try:

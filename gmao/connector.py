@@ -5,16 +5,19 @@ Authenticates with GMAO PRO WEB and fetches data from supported modules.
 Credentials are read from key.env and are never hardcoded.
 """
 
-import json
 import logging
 import os
-import re
 import threading
 import time
 from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
+from integrations.source_connector_base import (
+    extract_csrf_token,
+    fetch_records_from_endpoints,
+    get_id_from_list,
+)
 
 load_dotenv("key.env")
 
@@ -123,20 +126,7 @@ class GmaoConnector:
             cls._shared_connector = None
 
     def _get_id_from_list(self, items: list, name_key: str, target_name: str) -> str:
-        id_keys = ["Id", "id", "Value", "value", "ID"]
-        name_keys = [name_key, "Name", "name", "Label", "label", "text", "Text"]
-        for item in items:
-            for nk in name_keys:
-                val = str(item.get(nk, ""))
-                if target_name.lower() in val.lower():
-                    for ik in id_keys:
-                        if ik in item:
-                            return str(item[ik])
-        if items:
-            for ik in id_keys:
-                if ik in items[0]:
-                    return str(items[0][ik])
-        return ""
+        return get_id_from_list(items, name_key, target_name)
 
     def _fetch_login_ids(self) -> tuple:
         company_id = site_id = ""
@@ -254,13 +244,7 @@ class GmaoConnector:
             raise
 
     def _extract_csrf_token(self, html: str) -> str:
-        match = re.search(r'<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]+)"', html)
-        if match:
-            return match.group(1)
-        match = re.search(r'<meta[^>]*name="__RequestVerificationToken"[^>]*content="([^"]+)"', html)
-        if match:
-            return match.group(1)
-        return ""
+        return extract_csrf_token(html)
 
     @staticmethod
     def _default_module_params(module: str) -> dict | None:
@@ -311,91 +295,17 @@ class GmaoConnector:
             request_params.update(params)
         effective_timeout = GMAO_FETCH_TIMEOUT if timeout is None else timeout
         effective_retry_timeout = GMAO_RETRY_TIMEOUT if retry_timeout is None else retry_timeout
-
-        last_error = None
-        preferred_error = None
-        for endpoint in endpoints:
-            url = f"{self.base_url}{endpoint}"
-            try:
-                resp = self.session.get(url, params=request_params, timeout=effective_timeout, verify=False)
-                if resp.status_code == 404:
-                    last_error = requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
-                    continue
-                resp.raise_for_status()
-                content_type = resp.headers.get("Content-Type", "")
-                text = resp.text or ""
-                print(f"[GMAO] Fetch {module} via {endpoint} - Content-Type: {content_type}")
-                print(f"[GMAO] Response preview: {text[:300]}")
-                if "html" in content_type or text.lstrip().startswith("<"):
-                    print("[GMAO] Got HTML - session expired, re-logging in")
-                    self.logged_in = False
-                    self.login(force=True)
-                    resp = self.session.get(url, params=request_params, timeout=effective_timeout, verify=False)
-                    if resp.status_code == 404:
-                        last_error = requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
-                        continue
-                    resp.raise_for_status()
-                    text = resp.text or ""
-
-                try:
-                    data = resp.json()
-                except ValueError:
-                    # Some endpoints return an empty 200 body when there is no row,
-                    # or wrap JSON with a prefix/BOM.
-                    stripped = (text or "").lstrip()
-                    if not stripped:
-                        return []
-                    json_start = min([i for i in [stripped.find("{"), stripped.find("[")] if i >= 0], default=-1)
-                    if json_start >= 0:
-                        try:
-                            data = json.loads(stripped[json_start:])
-                        except Exception:
-                            raise ValueError(f"GMAO non-JSON response from {endpoint}: {stripped[:200]}")
-                    else:
-                        raise ValueError(f"GMAO non-JSON response from {endpoint}: {stripped[:200]}")
-                if isinstance(data, list):
-                    return data
-                if isinstance(data, dict):
-                    for key in ["data", "Data", "items", "Items", "result", "Result", "value"]:
-                        if key in data and isinstance(data[key], list):
-                            return data[key]
-                    return [data]
-                return []
-            except Exception as e:
-                last_error = e
-                if preferred_error is None:
-                    preferred_error = e
-                logging.warning(f"[GMAO] Fetch attempt failed for {module} via {endpoint}: {e}")
-                # One extra retry on timeout-like failures.
-                if effective_retry_timeout and "timed out" in str(e).lower():
-                    try:
-                        resp = self.session.get(url, params=request_params, timeout=effective_retry_timeout, verify=False)
-                        resp.raise_for_status()
-                        retry_text = resp.text or ""
-                        try:
-                            data = resp.json()
-                        except ValueError:
-                            stripped = retry_text.lstrip()
-                            if not stripped:
-                                return []
-                            json_start = min([i for i in [stripped.find("{"), stripped.find("[")] if i >= 0], default=-1)
-                            if json_start >= 0:
-                                data = json.loads(stripped[json_start:])
-                            else:
-                                raise ValueError(f"GMAO non-JSON response from {endpoint}: {stripped[:200]}")
-                        if isinstance(data, list):
-                            return data
-                        if isinstance(data, dict):
-                            for key in ["data", "Data", "items", "Items", "result", "Result", "value"]:
-                                if key in data and isinstance(data[key], list):
-                                    return data[key]
-                            return [data]
-                    except Exception as retry_err:
-                        last_error = retry_err
-
-        final_error = preferred_error or last_error
-        logging.error(f"[GMAO] Fetch error for {module}: {final_error}")
-        raise final_error
+        return fetch_records_from_endpoints(
+            session=self.session,
+            base_url=self.base_url,
+            module=module,
+            endpoints=endpoints,
+            request_params=request_params,
+            timeout=effective_timeout,
+            retry_timeout=effective_retry_timeout,
+            source_name="GMAO",
+            relogin=lambda: self.login(force=True),
+        )
 
     def logout(self):
         try:

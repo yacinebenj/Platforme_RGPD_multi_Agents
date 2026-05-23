@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agents.agent_a import detect_qalitas_fields
+from agents.agent_a import detect_source_fields
 from database import crud
 from gmao.connector import (
     GmaoConnector,
@@ -49,30 +49,29 @@ def _selected_modules(source_system: str, modules: list[str] | None) -> list[str
     return [module for module in modules if module in valid]
 
 
-def fetch_source_records(source_system: str, module: str, limit: int = 100) -> list[dict]:
-    config = SOURCE_CONFIG[source_system]
-    connector = config["connector"]()
-    try:
-        connector.login()
-        records = connector.fetch(module)
-        if limit and limit > 0:
-            records = records[:limit]
-        return records
-    finally:
-        try:
-            connector.logout()
-        except Exception:
-            pass
+def _shared_connector_for_source(source_system: str):
+    connector_cls = SOURCE_CONFIG[source_system]["connector"]
+    return connector_cls.shared()
 
 
-def analyse_source_module(source_system: str, module: str, limit: int = 100) -> dict:
+def fetch_source_records(source_system: str, module: str, limit: int = 100, connector=None) -> list[dict]:
+    source_connector = connector or _shared_connector_for_source(source_system)
+    if not getattr(source_connector, "logged_in", False):
+        source_connector.login()
+    records = source_connector.fetch(module)
+    if limit and limit > 0:
+        records = records[:limit]
+    return records
+
+
+def analyse_source_module(source_system: str, module: str, limit: int = 100, connector=None) -> dict:
     if source_system not in SOURCE_CONFIG:
         raise ValueError(f"Unknown real-time source: {source_system}")
 
     config = SOURCE_CONFIG[source_system]
     module_label = config["labels"].get(module, module)
-    records = fetch_source_records(source_system, module, limit=limit)
-    detection = detect_qalitas_fields(records, module, source_system=source_system)
+    records = fetch_source_records(source_system, module, limit=limit, connector=connector)
+    detection = detect_source_fields(records, module, source_system=source_system)
     current = build_snapshot(source_system, module, module_label, records, detection)
     previous = decode_snapshot(crud.get_latest_realtime_snapshot(source_system, module))
     changes = compare_snapshots(previous, current)
@@ -140,9 +139,10 @@ def run_realtime_cycle(
     errors = []
 
     for source_system in selected_sources:
+        connector = _shared_connector_for_source(source_system)
         for module in _selected_modules(source_system, modules):
             try:
-                results.append(analyse_source_module(source_system, module, limit=limit))
+                results.append(analyse_source_module(source_system, module, limit=limit, connector=connector))
             except Exception as exc:
                 config = SOURCE_CONFIG[source_system]
                 module_label = config["labels"].get(module, module)
@@ -162,6 +162,11 @@ def run_realtime_cycle(
                     message=str(exc),
                     metadata={"module": module, "source_system": source_system},
                 )
+                try:
+                    config["connector"].invalidate_shared()
+                except Exception:
+                    pass
+                connector = _shared_connector_for_source(source_system)
 
     return {
         "sources": selected_sources,

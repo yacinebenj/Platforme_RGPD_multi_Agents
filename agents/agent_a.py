@@ -1678,8 +1678,8 @@ def _summarize_gmao_organization_record(record: dict, index: int, field_ml: dict
     }
 
 
-def detect_qalitas_fields(records: list, module: str | None = None, source_system: str = "qalitas") -> dict:
-    """Detect personal/sensitive fields from raw QALITAS records."""
+def detect_source_fields(records: list, module: str | None = None, source_system: str = "qalitas") -> dict:
+    """Detect personal/sensitive fields from raw source records."""
     global _QALITAS_GROQ_CALLS
     _QALITAS_GROQ_CALLS = 0
     if not records:
@@ -1829,6 +1829,11 @@ def detect_qalitas_fields(records: list, module: str | None = None, source_syste
     }
 
 
+def detect_qalitas_fields(records: list, module: str | None = None, source_system: str = "qalitas") -> dict:
+    """Backward-compatible alias kept for existing callers."""
+    return detect_source_fields(records, module=module, source_system=source_system)
+
+
 def _merge_qalitas_profiles(module: str, qalitas_modules: list | None = None) -> dict:
     if module != "all":
         return QALITAS_MODULE_PROFILES.get(module, {})
@@ -1922,6 +1927,123 @@ def _merge_gmao_profiles(module: str, gmao_modules: list | None = None) -> dict:
     else:
         merged["donnees_minimisees"] = True
     return merged
+
+
+def _prepare_source_detection_scope(module: str, detection: dict, profile: dict, *, organization_only: bool = False) -> bool:
+    no_direct_personal_data = (
+        not detection["personal_fields"]
+        and not detection["sensitive_fields"]
+        and detection.get("records_with_personal_data", 0) == 0
+        and detection.get("affected_clients_count", 0) == 0
+    )
+    if no_direct_personal_data:
+        detection["person_categories"] = []
+        detection["person_categories_display"] = []
+        detection["hors_champ_rgpd"] = True
+        detection["scope_reason"] = (
+            "Module GMAO compose uniquement d organisations : aucune personne physique "
+            "ni donnee personnelle directe n a ete detectee."
+            if organization_only else
+            "Aucune donnee personnelle directe n a ete detectee dans l echantillon analyse. "
+            "Le module reste visible comme contexte metier, sans generer d alerte RGPD directe."
+        )
+    else:
+        detection["person_categories"] = profile.get("personnes_concernees", []) or []
+        detection["person_categories_display"] = _build_person_categories_display(module, profile)
+    return no_direct_personal_data
+
+
+def _build_source_derived_treatment(
+    *,
+    source_prefix: str,
+    module: str,
+    systeme: str,
+    profile: dict,
+    detection: dict,
+    module_key: str,
+    modules_key: str,
+    modules_value: list | None,
+) -> dict:
+    no_direct_personal_data = bool(detection.get("hors_champ_rgpd"))
+    donnees_collectees = detection["personal_fields"] + detection["sensitive_fields"]
+    donnees_sensibles = len(detection["sensitive_fields"]) > 0 or profile.get("donnees_sensibles", False)
+    defaults = _build_source_derived_defaults(module, profile, detection, systeme, no_direct_personal_data)
+    minimisation_ok = profile.get("donnees_minimisees", True) and not defaults["security_review_required"]
+
+    traitement = {
+        "id_traitement": f"{source_prefix}-{module.upper()}-001",
+        "nom_traitement": profile.get("nom_traitement", f"Traitement {source_prefix} {module}"),
+        "systeme": systeme,
+        "responsable": "DPO TIM Consulting",
+        "finalite": profile.get("finalite", ""),
+        "base_legale": defaults["base_legale"],
+        "_base_legale_presumee": profile.get("base_legale", False),
+        "_base_legale_inferred_from_profile": bool(profile.get("base_legale")),
+        "personnes_concernees": [] if no_direct_personal_data else profile.get("personnes_concernees", []),
+        "transfert_etranger": profile.get("transfert_etranger", False),
+        "risque_eleve": False if no_direct_personal_data else profile.get("risque_eleve", False),
+        "donnees_minimisees": minimisation_ok,
+        "donnees_collectees": donnees_collectees,
+        "donnees_sensibles": False if no_direct_personal_data else donnees_sensibles,
+        "duree_conservation": defaults["duree_conservation"],
+        "duree_conservation_definie": defaults["duree_conservation_definie"],
+        "duree_depassee": defaults["duree_depassee"],
+        "mesures_securite": defaults["mesures_securite"],
+        "privacy_by_design": defaults["privacy_by_design"],
+        "privacy_by_default": defaults["privacy_by_default"],
+        "processus_droits_personnes": defaults["processus_droits_personnes"],
+        "information_personnes_concernees": defaults["information_personnes_concernees"],
+        "modalites_droits_accessibles": defaults["modalites_droits_accessibles"],
+        "consentement_valide": defaults["consentement_valide"],
+        "consentement_retire": defaults["consentement_retire"],
+        "violation_donnees": defaults["violation_donnees"],
+        "notification_72h": defaults["notification_72h"],
+        "notification_personnes": defaults["notification_personnes"],
+        "violation_documentee": defaults["violation_documentee"],
+        "aipd_realisee": defaults["aipd_realisee"],
+        "mise_en_production": defaults["mise_en_production"],
+        "analyse_risque_avant_production": defaults["analyse_risque_avant_production"],
+        "garanties_specifiques": defaults["garanties_specifiques"],
+        "respect_vie_privee": defaults["respect_vie_privee"],
+        "declaration_inpdp": defaults["declaration_inpdp"],
+        "registre_traitement": defaults["registre_traitement"],
+        "politique_protection_donnees": defaults["politique_protection_donnees"],
+        "revue_periodique_mesures": defaults["revue_periodique_mesures"],
+        "tests_securite_reguliers": defaults["tests_securite_reguliers"],
+        "controle_acces_physique": defaults["controle_acces_physique"],
+        "confidentialite_post_traitement": defaults["confidentialite_post_traitement"],
+        "contrat_sous_traitance": defaults["contrat_sous_traitance"],
+        "garanties_sous_traitant": defaults["garanties_sous_traitant"],
+        "collecte_indirecte": defaults["collecte_indirecte"],
+        "information_collecte_indirecte": defaults["information_collecte_indirecte"],
+        "consentement_collecte_indirecte": defaults["consentement_collecte_indirecte"],
+        "information_transfert_fournie": defaults["information_transfert_fournie"],
+        "opposition_ignoree": defaults["opposition_ignoree"],
+        "decision_automatisee": defaults["decision_automatisee"],
+        "garanties_decision_auto": defaults["garanties_decision_auto"],
+        "dsar_hors_delai": defaults["dsar_hors_delai"],
+        "traitement_grande_echelle": defaults["traitement_grande_echelle"],
+        "dpo_designe": defaults["dpo_designe"],
+        "missions_dpo_garanties": defaults["missions_dpo_garanties"],
+        "adequation_ou_garanties_documentees": defaults["adequation_ou_garanties_documentees"],
+        "autorisation_inpdp_transfert": defaults["autorisation_inpdp_transfert"],
+        "niveau_protection_adequat": defaults["niveau_protection_adequat"],
+        "risque_securite_nationale": defaults["risque_securite_nationale"],
+        "chiffrement_actif": defaults["chiffrement_actif"],
+        "_security_review_required": defaults["security_review_required"],
+        "_critical_content_detected": defaults["critical_content_detected"],
+        "_sensitive_content_detected": defaults["sensitive_content_detected"],
+        "hors_champ_rgpd": no_direct_personal_data,
+        "champ_application_rgpd": "hors_champ" if no_direct_personal_data else "applicable",
+        "scope_reason": detection.get("scope_reason"),
+        "_source_derived": True,
+        "_documentary_unknowns": _initial_documentary_unknowns(),
+        module_key: module,
+        modules_key: modules_value or [],
+        "_record_count": detection["record_count"],
+        "_detected_fields": detection,
+    }
+    return traitement
 
 
 def _build_person_categories_display(module: str, profile: dict) -> list:
@@ -2022,186 +2144,37 @@ def _build_source_derived_defaults(
 
 def build_traitement_from_qalitas(module: str, records: list, systeme: str = "QALITAS WEB", qalitas_modules: list | None = None) -> dict:
     """Build a complete traitement dict from raw QALITAS records."""
-    detection = detect_qalitas_fields(records, module)
-    profile   = _merge_qalitas_profiles(module, qalitas_modules)
-    no_direct_personal_data = (
-        not detection["personal_fields"]
-        and not detection["sensitive_fields"]
-        and detection.get("records_with_personal_data", 0) == 0
-        and detection.get("affected_clients_count", 0) == 0
+    detection = detect_source_fields(records, module)
+    profile = _merge_qalitas_profiles(module, qalitas_modules)
+    _prepare_source_detection_scope(module, detection, profile)
+    return _build_source_derived_treatment(
+        source_prefix="QALITAS",
+        module=module,
+        systeme=systeme,
+        profile=profile,
+        detection=detection,
+        module_key="_qalitas_module",
+        modules_key="_qalitas_modules",
+        modules_value=qalitas_modules,
     )
-    if no_direct_personal_data:
-        detection["person_categories"] = []
-        detection["person_categories_display"] = []
-        detection["hors_champ_rgpd"] = True
-        detection["scope_reason"] = (
-            "Aucune donnee personnelle directe n a ete detectee dans l echantillon analyse. "
-            "Le module reste visible comme contexte metier, sans generer d alerte RGPD directe."
-        )
-    else:
-        detection["person_categories"] = profile.get("personnes_concernees", []) or []
-        detection["person_categories_display"] = _build_person_categories_display(module, profile)
-    donnees_collectees = detection["personal_fields"] + detection["sensitive_fields"]
-    donnees_sensibles  = len(detection["sensitive_fields"]) > 0 or profile.get("donnees_sensibles", False)
-    defaults = _build_source_derived_defaults(module, profile, detection, systeme, no_direct_personal_data)
-    minimisation_ok = profile.get("donnees_minimisees", True) and not defaults["security_review_required"]
-    return {
-        "id_traitement":    f"QALITAS-{module.upper()}-001",
-        "nom_traitement":   profile.get("nom_traitement", f"Traitement QALITAS {module}"),
-        "systeme":          systeme,
-        "responsable":      "DPO TIM Consulting",
-        "finalite":         profile.get("finalite", ""),
-        "base_legale":      defaults["base_legale"],
-        "_base_legale_presumee": profile.get("base_legale", False),
-        "_base_legale_inferred_from_profile": bool(profile.get("base_legale")),
-        "personnes_concernees":    [] if no_direct_personal_data else profile.get("personnes_concernees", []),
-        "transfert_etranger":      profile.get("transfert_etranger", False),
-        "risque_eleve":            False if no_direct_personal_data else profile.get("risque_eleve", False),
-        "donnees_minimisees":      minimisation_ok,
-        "donnees_collectees":      donnees_collectees,
-        "donnees_sensibles":       False if no_direct_personal_data else donnees_sensibles,
-        "duree_conservation": defaults["duree_conservation"],
-        "duree_conservation_definie": defaults["duree_conservation_definie"], "duree_depassee": defaults["duree_depassee"],
-        "mesures_securite": defaults["mesures_securite"], "privacy_by_design": defaults["privacy_by_design"],
-        "privacy_by_default": defaults["privacy_by_default"],
-        "processus_droits_personnes": defaults["processus_droits_personnes"], "information_personnes_concernees": defaults["information_personnes_concernees"],
-        "modalites_droits_accessibles": defaults["modalites_droits_accessibles"],
-        "consentement_valide": defaults["consentement_valide"], "consentement_retire": defaults["consentement_retire"],
-        "violation_donnees": defaults["violation_donnees"], "notification_72h": defaults["notification_72h"],
-        "notification_personnes": defaults["notification_personnes"], "violation_documentee": defaults["violation_documentee"],
-        "aipd_realisee": defaults["aipd_realisee"], "mise_en_production": defaults["mise_en_production"],
-        "analyse_risque_avant_production": defaults["analyse_risque_avant_production"], "garanties_specifiques": defaults["garanties_specifiques"],
-        "respect_vie_privee": defaults["respect_vie_privee"], "declaration_inpdp": defaults["declaration_inpdp"], "registre_traitement": defaults["registre_traitement"],
-        "politique_protection_donnees": defaults["politique_protection_donnees"],
-        "revue_periodique_mesures": defaults["revue_periodique_mesures"],
-        "tests_securite_reguliers": defaults["tests_securite_reguliers"],
-        "controle_acces_physique": defaults["controle_acces_physique"],
-        "confidentialite_post_traitement": defaults["confidentialite_post_traitement"],
-        "contrat_sous_traitance": defaults["contrat_sous_traitance"],
-        "garanties_sous_traitant": defaults["garanties_sous_traitant"],
-        "collecte_indirecte": defaults["collecte_indirecte"],
-        "information_collecte_indirecte": defaults["information_collecte_indirecte"],
-        "consentement_collecte_indirecte": defaults["consentement_collecte_indirecte"],
-        "information_transfert_fournie": defaults["information_transfert_fournie"],
-        "opposition_ignoree": defaults["opposition_ignoree"],
-        "decision_automatisee": defaults["decision_automatisee"],
-        "garanties_decision_auto": defaults["garanties_decision_auto"],
-        "dsar_hors_delai": defaults["dsar_hors_delai"],
-        "traitement_grande_echelle": defaults["traitement_grande_echelle"],
-        "dpo_designe": defaults["dpo_designe"],
-        "missions_dpo_garanties": defaults["missions_dpo_garanties"],
-        "adequation_ou_garanties_documentees": defaults["adequation_ou_garanties_documentees"],
-        "autorisation_inpdp_transfert": defaults["autorisation_inpdp_transfert"],
-        "niveau_protection_adequat": defaults["niveau_protection_adequat"],
-        "risque_securite_nationale": defaults["risque_securite_nationale"],
-        "chiffrement_actif": defaults["chiffrement_actif"],
-        "_security_review_required": defaults["security_review_required"],
-        "_critical_content_detected": defaults["critical_content_detected"],
-        "_sensitive_content_detected": defaults["sensitive_content_detected"],
-        "hors_champ_rgpd": no_direct_personal_data,
-        "champ_application_rgpd": "hors_champ" if no_direct_personal_data else "applicable",
-        "scope_reason": detection.get("scope_reason"),
-        "_source_derived": True,
-        "_documentary_unknowns": _initial_documentary_unknowns(),
-        "_qalitas_module":  module,
-        "_qalitas_modules": qalitas_modules or [],
-        "_record_count":    detection["record_count"],
-        "_detected_fields": detection,
-    }
 
 
 def build_traitement_from_gmao(module: str, records: list, systeme: str = "GMAO PRO WEB", gmao_modules: list | None = None) -> dict:
     """Build a complete traitement dict from raw GMAO records using QALITAS-style detection."""
-    detection = detect_qalitas_fields(records, module, source_system="gmao")
+    detection = detect_source_fields(records, module, source_system="gmao")
     profile = _merge_gmao_profiles(module, gmao_modules)
-    no_direct_personal_data = (
-        not detection["personal_fields"]
-        and not detection["sensitive_fields"]
-        and detection.get("records_with_personal_data", 0) == 0
-        and detection.get("affected_clients_count", 0) == 0
+    organization_only = module in GMAO_ORGANIZATION_MODULES
+    _prepare_source_detection_scope(module, detection, profile, organization_only=organization_only)
+    return _build_source_derived_treatment(
+        source_prefix="GMAO",
+        module=module,
+        systeme=systeme,
+        profile=profile,
+        detection=detection,
+        module_key="_gmao_module",
+        modules_key="_gmao_modules",
+        modules_value=gmao_modules,
     )
-    organization_only = no_direct_personal_data and module in GMAO_ORGANIZATION_MODULES
-    if no_direct_personal_data:
-        detection["person_categories"] = []
-        detection["person_categories_display"] = []
-        detection["hors_champ_rgpd"] = True
-        detection["scope_reason"] = (
-            "Module GMAO compose uniquement d organisations : aucune personne physique "
-            "ni donnee personnelle directe n a ete detectee."
-            if organization_only else
-            "Aucune donnee personnelle directe n a ete detectee dans l echantillon analyse. "
-            "Le module reste visible comme contexte metier, sans generer d alerte RGPD directe."
-        )
-    else:
-        detection["person_categories"] = profile.get("personnes_concernees", []) or []
-        detection["person_categories_display"] = _build_person_categories_display(module, profile)
-    donnees_collectees = detection["personal_fields"] + detection["sensitive_fields"]
-    donnees_sensibles = len(detection["sensitive_fields"]) > 0 or profile.get("donnees_sensibles", False)
-    defaults = _build_source_derived_defaults(module, profile, detection, systeme, no_direct_personal_data)
-    minimisation_ok = profile.get("donnees_minimisees", True) and not defaults["security_review_required"]
-    return {
-        "id_traitement":    f"GMAO-{module.upper()}-001",
-        "nom_traitement":   profile.get("nom_traitement", f"Traitement GMAO {module}"),
-        "systeme":          systeme,
-        "responsable":      "DPO TIM Consulting",
-        "finalite":         profile.get("finalite", ""),
-        "base_legale":      defaults["base_legale"],
-        "_base_legale_presumee": profile.get("base_legale", False),
-        "_base_legale_inferred_from_profile": bool(profile.get("base_legale")),
-        "personnes_concernees":    [] if no_direct_personal_data else profile.get("personnes_concernees", []),
-        "transfert_etranger":      profile.get("transfert_etranger", False),
-        "risque_eleve":            False if no_direct_personal_data else profile.get("risque_eleve", False),
-        "donnees_minimisees":      minimisation_ok,
-        "donnees_collectees":      donnees_collectees,
-        "donnees_sensibles":       False if no_direct_personal_data else donnees_sensibles,
-        "duree_conservation": defaults["duree_conservation"],
-        "duree_conservation_definie": defaults["duree_conservation_definie"], "duree_depassee": defaults["duree_depassee"],
-        "mesures_securite": defaults["mesures_securite"], "privacy_by_design": defaults["privacy_by_design"],
-        "privacy_by_default": defaults["privacy_by_default"],
-        "processus_droits_personnes": defaults["processus_droits_personnes"], "information_personnes_concernees": defaults["information_personnes_concernees"],
-        "modalites_droits_accessibles": defaults["modalites_droits_accessibles"],
-        "consentement_valide": defaults["consentement_valide"], "consentement_retire": defaults["consentement_retire"],
-        "violation_donnees": defaults["violation_donnees"], "notification_72h": defaults["notification_72h"],
-        "notification_personnes": defaults["notification_personnes"], "violation_documentee": defaults["violation_documentee"],
-        "aipd_realisee": defaults["aipd_realisee"], "mise_en_production": defaults["mise_en_production"],
-        "analyse_risque_avant_production": defaults["analyse_risque_avant_production"], "garanties_specifiques": defaults["garanties_specifiques"],
-        "respect_vie_privee": defaults["respect_vie_privee"], "declaration_inpdp": defaults["declaration_inpdp"], "registre_traitement": defaults["registre_traitement"],
-        "politique_protection_donnees": defaults["politique_protection_donnees"],
-        "revue_periodique_mesures": defaults["revue_periodique_mesures"],
-        "tests_securite_reguliers": defaults["tests_securite_reguliers"],
-        "controle_acces_physique": defaults["controle_acces_physique"],
-        "confidentialite_post_traitement": defaults["confidentialite_post_traitement"],
-        "contrat_sous_traitance": defaults["contrat_sous_traitance"],
-        "garanties_sous_traitant": defaults["garanties_sous_traitant"],
-        "collecte_indirecte": defaults["collecte_indirecte"],
-        "information_collecte_indirecte": defaults["information_collecte_indirecte"],
-        "consentement_collecte_indirecte": defaults["consentement_collecte_indirecte"],
-        "information_transfert_fournie": defaults["information_transfert_fournie"],
-        "opposition_ignoree": defaults["opposition_ignoree"],
-        "decision_automatisee": defaults["decision_automatisee"],
-        "garanties_decision_auto": defaults["garanties_decision_auto"],
-        "dsar_hors_delai": defaults["dsar_hors_delai"],
-        "traitement_grande_echelle": defaults["traitement_grande_echelle"],
-        "dpo_designe": defaults["dpo_designe"],
-        "missions_dpo_garanties": defaults["missions_dpo_garanties"],
-        "adequation_ou_garanties_documentees": defaults["adequation_ou_garanties_documentees"],
-        "autorisation_inpdp_transfert": defaults["autorisation_inpdp_transfert"],
-        "niveau_protection_adequat": defaults["niveau_protection_adequat"],
-        "risque_securite_nationale": defaults["risque_securite_nationale"],
-        "chiffrement_actif": defaults["chiffrement_actif"],
-        "_security_review_required": defaults["security_review_required"],
-        "_critical_content_detected": defaults["critical_content_detected"],
-        "_sensitive_content_detected": defaults["sensitive_content_detected"],
-        "_gmao_module":  module,
-        "_gmao_modules": gmao_modules or [],
-        "_record_count":    detection["record_count"],
-        "_detected_fields": detection,
-        "hors_champ_rgpd": no_direct_personal_data,
-        "champ_application_rgpd": "hors_champ" if no_direct_personal_data else "applicable",
-        "scope_reason": detection.get("scope_reason"),
-        "_source_derived": True,
-        "_documentary_unknowns": _initial_documentary_unknowns(),
-    }
 
 # (duplicate removed - see detect_qalitas_fields and build_traitement_from_qalitas above)
 
