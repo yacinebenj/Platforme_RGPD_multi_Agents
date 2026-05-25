@@ -31,12 +31,15 @@ QALITAS_FETCH_TIMEOUT = int(os.getenv("QALITAS_FETCH_TIMEOUT", "20"))
 QALITAS_RETRY_TIMEOUT = int(os.getenv("QALITAS_RETRY_TIMEOUT", "25"))
 
 MODULE_ENDPOINTS = {
-    "customers": ["/Customer/GetEnabledCustomers"],
-    "suppliers": ["/Supplier/GetEnabledSuppliers"],
-    "employees": ["/HumanResources/GetEmployees", "/HumanResources/GetEnabledEmployees", "/Employee/GetEmployees"],
+    "customers": ["/Customer/GetEnabledCustomers", "/Customer/GetCustomers"],
+    "suppliers": ["/Supplier/GetEnabledSuppliers", "/Supplier/GetSuppliers"],
+    "employees": ["/Employee/GetEnabledEmployees", "/Employee/GetEmployees", "/Employee/GetEmployeesForFilter", "/HumanResources/GetEmployees", "/HumanResources/GetEnabledEmployees"],
     "audits": ["/Audit/GetAudits", "/Audit/GetEnabledAudits"],
-    "actions": ["/Action/GetActions", "/Action/GetEnabledActions"],
+    "actions": ["/Actions/GetAllActions", "/Action/GetActions", "/Action/GetEnabledActions"],
     "nonconf": ["/NonConformity/GetNonConformities", "/NonConformity/GetEnabledNonConformities"],
+    "equipments": ["/Equipment/GetEnabledEquipments", "/Equipment/GetAllEquipments"],
+    "processes": ["/Process/GetEnabledProcess", "/Process/GetProcess", "/Process/GetProcessesForFilter"],
+    "projects": ["/Project/GetProjects"],
     "companies": ["/Account/GetCompanies", "/Customer/GetCompanies"],
     "sites": ["/Account/GetSites", "/Customer/GetSites"],
 }
@@ -48,6 +51,9 @@ MODULE_LABELS = {
     "audits": "Audits",
     "actions": "Actions Correctives",
     "nonconf": "Non-Conformites",
+    "equipments": "Equipements",
+    "processes": "Processus",
+    "projects": "Projets",
     "companies": "Societes",
     "sites": "Sites",
 }

@@ -38,7 +38,7 @@ PII_PATTERNS: dict[str, re.Pattern] = {
     "nss":          re.compile(r"\b[12]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{3}\s?\d{3}\s?\d{2}\b"),
     "cin_tn":       re.compile(r"\b[0-9]{8}\b"),
     "gps_coords":   re.compile(r"(?:lat(?:itude)?|lon(?:gitude)?)\s*[:=]\s*[\-+]?\d{1,3}\.\d+", re.I),
-    "iban":         re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7,}\b"),
+    "iban":         re.compile(r"\b[A-Z]{2}\d{2}(?:[\s.\-]?[A-Z0-9]){11,30}\b"),
     "ip_address":   re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
     "date_naissance": re.compile(
         r"\b(?:né(?:e)?\s+le|date\s+de\s+naissance|dob)\s*[:/]?\s*\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}",

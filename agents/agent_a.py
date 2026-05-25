@@ -315,6 +315,27 @@ QALITAS_MODULE_PROFILES = {
         "personnes_concernees": ["contacts sites", "responsables locaux"],
         "risque_eleve": False, "transfert_etranger": False, "donnees_minimisees": True,
     },
+    "equipments": {
+        "nom_traitement": "Gestion des equipements QALITAS",
+        "finalite": "Inventaire des equipements, machines et actifs techniques",
+        "base_legale": "interet_legitime",
+        "personnes_concernees": [],
+        "risque_eleve": False, "transfert_etranger": False, "donnees_minimisees": True,
+    },
+    "processes": {
+        "nom_traitement": "Gestion des processus QALITAS",
+        "finalite": "Cartographie et gestion des processus qualite, risques et indicateurs",
+        "base_legale": "interet_legitime",
+        "personnes_concernees": ["responsables processus", "pilotes", "auditeurs"],
+        "risque_eleve": False, "transfert_etranger": False, "donnees_minimisees": True,
+    },
+    "projects": {
+        "nom_traitement": "Gestion des projets QALITAS",
+        "finalite": "Planification, suivi et cloture des projets internes",
+        "base_legale": "interet_legitime",
+        "personnes_concernees": ["chefs de projet", "membres equipe projet", "responsables"],
+        "risque_eleve": False, "transfert_etranger": False, "donnees_minimisees": True,
+    },
 }
 
 GMAO_MODULE_PROFILES = {
@@ -2062,7 +2083,7 @@ def _default_retention_period(module: str, systeme: str = "") -> str:
         return "10 ans"
     if module in {"meetings", "meeting_actions", "resource_needs", "maintenance_teams"}:
         return "3 ans"
-    if module in {"equipments", "toolings", "maintenance_operations", "maintenance_ranges", "articles", "calculation_needs"}:
+    if module in {"equipments", "toolings", "maintenance_operations", "maintenance_ranges", "articles", "calculation_needs", "processes", "projects"}:
         return "Selon cycle de vie de l actif et politique de maintenance"
     if "GMAO" in systeme:
         return "Selon politique de maintenance et obligations contractuelles"

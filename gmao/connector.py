@@ -31,18 +31,18 @@ GMAO_FETCH_TIMEOUT = int(os.getenv("GMAO_FETCH_TIMEOUT", "25"))
 GMAO_RETRY_TIMEOUT = int(os.getenv("GMAO_RETRY_TIMEOUT", "35"))
 
 MODULE_ENDPOINTS = {
-    "customers": ["/Customer/GetEnabledCustomers"],
+    "customers": ["/Customer/GetEnabledCustomers", "/Customer/GetCustomers"],
     "suppliers": ["/Supplier/GetEnabledSuppliers"],
     "resource_needs": ["/ResourceNeeds/GetResourceNeeds"],
     "organization_chart": ["/Actions/GetOrganizationChart"],
-    "meeting_actions": ["/Actions/GetAllActionBySource"],
+    "meeting_actions": ["/Actions/GetAllActionBySource", "/Actions/GetAllActions"],
     "meetings": ["/Meeting/GetMeetings", "/Meetings/GetMeetings"],
     "maintenance_teams": ["/Maintenance/GetMaintenanceTeams", "/MaintenanceTeams/GetMaintenanceTeams"],
     "qualifications": ["/Qualification/GetQualifications", "/Qualifications/GetQualifications"],
-    "equipments": ["/Equipment/GetEnabledEquipments", "/Equipments/GetEnabledEquipments"],
+    "equipments": ["/Equipment/GetEnabledEquipments", "/Equipments/GetEnabledEquipments", "/Equipment/GetAllEquipments"],
     "toolings": ["/Tooling/GetEnabledToolings", "/Toolings/GetEnabledToolings"],
-    "maintenance_operations": ["/Maintenance/GetEnabledMaintenanceOperations", "/MaintenanceOperation/GetEnabledMaintenanceOperations"],
-    "maintenance_ranges": ["/Maintenance/GetEnabledMaintenanceRanges", "/MaintenanceRange/GetEnabledMaintenanceRanges"],
+    "maintenance_operations": ["/Maintenance/GetEnabledMaintenanceOperations", "/MaintenanceOperation/GetEnabledMaintenanceOperations", "/MaintenanceOperation/GetAllMaintenanceOperations"],
+    "maintenance_ranges": ["/Maintenance/GetEnabledMaintenanceRanges", "/MaintenanceRange/GetEnabledMaintenanceRanges", "/MaintenanceRange/GetAllMaintenanceRanges"],
     "articles": ["/Article/GetEnabledArticles", "/Articles/GetEnabledArticles"],
     "purchase_requests": ["/PurchaseRequest/GetPurchaseRequest", "/PurchaseRequests/GetPurchaseRequest"],
     "purchase_orders": ["/PurchaseOrder/GetAllPurchaseOrders", "/PurchaseOrders/GetAllPurchaseOrders"],

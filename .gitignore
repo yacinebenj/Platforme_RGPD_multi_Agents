@@ -26,9 +26,16 @@ ui_uvicorn*.log
 .tmp_*
 .edge-ui-test/
 
-# Local DB transient files
+# Runtime database (regenerated locally)
+*.db
 *.db-shm
 *.db-wal
+
+# Generated discovery output
+data/discovery/
+
+# Dev utilities
+fix_files.py
 
 # Generated screenshots / local audits
 pw_*.png

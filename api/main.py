@@ -13,7 +13,7 @@ from agents.agent_a import run_agent_a
 from agents.agent_b import run_agent_b
 from agents.agent_c import DROITS_RGPD, run_agent_c
 from agents.agent_d import run_agent_d
-from agents.unstructured_scanner import scan_unstructured_file
+from agents.unstructured_detector import scan_bytes as _detector_scan_bytes
 from orchestrator.workflow import run_workflow  # LangGraph orchestrator
 from database.db import init_db
 from database import crud
@@ -240,8 +240,6 @@ def _set_cached_bundle(source: str, module: str, limit: int, bundle: dict[str, A
             "ts": time.monotonic(),
             "value": stored,
         }
-        return _finalize_dsar_type(data.texte, fallback)
-        return _finalize_dsar_type(data.texte, fallback)
 
 # Initialize DB tables on startup
 @app.on_event("startup")
@@ -905,6 +903,29 @@ def persist_governance_snapshot(agent_d_output: dict):
         return None
 
 
+def _scan_with_detector(filename: str, content: bytes) -> dict:
+    result = _detector_scan_bytes(content, filename)
+    output = result.to_dict()
+    output["filename"] = output.pop("source_file")
+
+    max_crit = output.get("criticite_globale", "faible")
+    error = output.get("error")
+    findings = output.get("findings", [])
+    file_type = output.get("file_type", "document")
+    method = output.get("extraction_method", "scan")
+
+    if error and not findings:
+        output["rgpd_impact"] = {"action_requise": False, "recommandation": f"Analyse partielle. {error}"}
+    elif not findings:
+        output["rgpd_impact"] = {"action_requise": False, "recommandation": f"Aucune donnee personnelle evidente detectee via {method}."}
+    elif max_crit in {"critique", "elevee"}:
+        output["rgpd_impact"] = {"action_requise": True, "recommandation": f"Verifier ce fichier {file_type}, limiter le partage et definir une mesure de protection adaptee."}
+    else:
+        output["rgpd_impact"] = {"action_requise": False, "recommandation": "Des donnees personnelles ont ete detectees. Verifier la finalite, la conservation et l'acces."}
+
+    return output
+
+
 @app.post("/scan/unstructured")
 async def scan_unstructured(
     file: UploadFile = File(...),
@@ -921,7 +942,7 @@ async def scan_unstructured(
         if not content:
             raise HTTPException(status_code=400, detail="Empty file.")
 
-        result = scan_unstructured_file(file.filename or "upload.bin", content)
+        result = _scan_with_detector(file.filename or "upload.bin", content)
         result["saved"] = False
         result["scan_mode"] = "preview_only"
         return result
@@ -1427,11 +1448,11 @@ async def analyse_treatment_correction(
             content = await file.read()
             if not content:
                 raise HTTPException(status_code=400, detail="Fichier preuve vide.")
-            file_scan = scan_unstructured_file(file.filename or "correction.bin", content)
+            file_scan = _scan_with_detector(file.filename or "correction.bin", content)
 
         description_scan = None
         if str(description or "").strip():
-            description_scan = scan_unstructured_file(
+            description_scan = _scan_with_detector(
                 "correction_note.txt",
                 str(description or "").encode("utf-8", errors="ignore"),
             )
@@ -1535,7 +1556,7 @@ async def scan_unstructured_analyse(
         if not content:
             raise HTTPException(status_code=400, detail="Empty file.")
 
-        scan_result = scan_unstructured_file(file.filename or "upload.bin", content)
+        scan_result = _scan_with_detector(file.filename or "upload.bin", content)
         try:
             scan_id = crud.save_unstructured_scan(
                 result=scan_result,
