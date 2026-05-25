@@ -37,6 +37,9 @@ data/discovery/
 # Dev utilities
 fix_files.py
 
+# Tests (supervisor-only, not part of deployed codebase)
+tests/
+
 # Generated screenshots / local audits
 pw_*.png
 
