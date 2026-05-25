@@ -46,6 +46,14 @@ from ml.assistant_intent_classifier import dataset_summary as assistant_dataset_
 from ml.dsar_classifier import dataset_summary as dsar_dataset_summary, predict_dsar_intent, train_dsar_intent_model
 from ml.field_classifier import canonical_field_label, dataset_summary as field_dataset_summary, predict_field_category, train_field_classifier_model
 
+# Suppress noisy library logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("groq").setLevel(logging.WARNING)
+logging.getLogger("pdfplumber").setLevel(logging.WARNING)
+
 app = FastAPI()
 
 
