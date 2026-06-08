@@ -278,6 +278,7 @@ def train_dsar_intent_model() -> dict[str, Any]:
         }
 
     dataset = build_training_dataset()
+    print(dataset) 
     labels = [case["label"] for case in dataset]
     texts = [case["text"] for case in dataset]
     counts = Counter(labels)

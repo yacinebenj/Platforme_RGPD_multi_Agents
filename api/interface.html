@@ -1309,14 +1309,14 @@ Exemples :
           <div class="form-group">
             <label>Portée de lecture</label>
             <select id="qalitas_module" onchange="refreshSourceScopeUx()">
-              <option value="all" selected>Toute la source (démo validée)</option>
+              <option value="all" selected>Toute la source</option>
               <option value="customers">Clients actifs</option>
               <option value="suppliers">Fournisseurs</option>
               <option value="employees">Ressources humaines</option>
               <option value="nonconf">Non-conformités</option>
               <option value="companies">Sociétés</option>
             </select>
-            <div style="margin-top:6px;font-size:12px;color:var(--ink-3)" id="qalitas_scope_hint">Mode démo validé : QALITAS est limité aux modules stables pour éviter les zones fragiles.</div>
+            <div style="margin-top:6px;font-size:12px;color:var(--ink-3)" id="qalitas_scope_hint">QALITAS est limité aux modules stables pour éviter les zones fragiles.</div>
           </div>
           <div class="form-group">
             <label>Nombre d'enregistrements</label>
@@ -1385,7 +1385,7 @@ Exemples :
           <div class="form-group">
             <label>Portée de lecture</label>
             <select id="gmao_module" onchange="refreshSourceScopeUx()">
-              <option value="all" selected>Toute la source (démo validée)</option>
+              <option value="all" selected>Toute la source</option>
               <option value="customers">Clients actifs</option>
               <option value="suppliers">Fournisseurs actifs</option>
               <option value="resource_needs">Besoins en ressources</option>
@@ -1394,7 +1394,7 @@ Exemples :
               <option value="maintenance_ranges">Gammes de maintenance</option>
               <option value="articles">Articles</option>
             </select>
-            <div style="margin-top:6px;font-size:12px;color:var(--ink-3)" id="gmao_scope_hint">Mode démo validé : GMAO est limité aux modules stables pour garder une démonstration fiable.</div>
+            <div style="margin-top:6px;font-size:12px;color:var(--ink-3)" id="gmao_scope_hint">GMAO est limité aux modules stables pour garder une démonstration fiable.</div>
           </div>
           <div class="form-group">
             <label>Nombre d'enregistrements</label>
@@ -1503,7 +1503,7 @@ Exemples :
       </div>
     </div>
 
-    <div id="manual_form_wrapper" class="manual-wrapper" data-permission="analysis:run">
+    <div id="manual_form_wrapper" class="manual-wrapper">
     <div class="card">
       <div class="card-header"><div class="card-title">Saisie manuelle du traitement</div></div>
       <div class="card-body">
@@ -1573,7 +1573,7 @@ Exemples :
       <!-- Risques -->
       <div>
         <div class="card">
-          <div class="card-header"><div class="card-title">Risques — Analyse des risques du traitement sélectionné</div><button class="btn btn-ghost btn-sm" onclick="loadLatestAnalysis()">Charger la dernière analyse</button></div>
+          <div class="card-header"><div class="card-title">Risques — Analyse des risques du traitement sélectionné</div><div class="btn-row"><button class="btn btn-primary btn-sm" onclick="analyserB()">Analyser les risques</button><button class="btn btn-ghost btn-sm" onclick="loadLatestAnalysis()">Charger la dernière analyse</button></div></div>
           <div id="q4_loading" class="loading-state" style="display:none"><div class="spinner"></div>Chargement...</div>
           <div id="q4_no_data" style="display:block">
             <div class="empty-state">
@@ -2774,7 +2774,7 @@ async function loadAnalysisOverview(options={}){
   analysisOverviewLoading=true;
   if(!silent)el.innerHTML=`<div class="loading-state"><div class="spinner"></div>Chargement des analyses...</div>`;
   try{
-    const data=await fetchJsonWithTimeout('/history/treatments?limit=80',{},30000);
+    const data=await fetchJsonWithTimeout('/history/treatments?limit=5',{},30000);
     const rows=data.treatments||[];
     window.analysisOverviewRows=rows;
     if(!rows.length){
@@ -3073,9 +3073,26 @@ async function analyserB(){
   const traitement=globalTraitement||{id_traitement:'INC-STANDALONE',nom_traitement:'Incident déclaré manuellement',systeme:'QALITAS / GMAO PRO',donnees_collectees:['nom','email','localisation_GPS'],base_legale:'contrat',finalite_definie:true,donnees_sensibles:false,transfert_etranger:false,mesures_securite:['controle_acces'],privacy_by_design:false,garanties_specifiques:false,risque_eleve:false,aipd_realisee:false};
   const incident=globalIncident;
   try{
+    const loading=document.getElementById('q4_loading'),noData=document.getElementById('q4_no_data'),results=document.getElementById('q4_results');
+    if(loading)loading.style.display='block';if(noData)noData.style.display='none';if(results)results.style.display='none';
     const res=await fetch('/risques',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({traitement,incident})});
     const data=await res.json();
     afficherB(data);
+    if(loading)loading.style.display='none';if(results)results.style.display='block';
+    const meta=document.getElementById('q4_meta');if(meta)meta.textContent='Analyse risques : '+(data.agent_b&&data.agent_b.traitement_nom||traitement.nom_traitement||'?');
+    const q4Content=document.getElementById('q4_content');
+    if(q4Content&&data.agent_b){
+      const q4=data.agent_b.q4_risques_aipd||{};
+      const risques=q4.risques_identifies||[];
+      let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">`;
+      html+=`<div class="score-box"><div class="score-num">${q4.nombre_risques||0}</div><div class="score-lbl">Risques</div></div>`;
+      html+=`<div class="score-box"><div class="score-num" style="color:var(--danger)">${q4.risques_critiques||0}</div><div class="score-lbl">Critiques</div></div>`;
+      html+=`<div class="score-box"><div class="score-num" style="color:var(--warning)">${q4.risques_eleves||0}</div><div class="score-lbl">Élevés</div></div>`;
+      html+=`</div>`;
+      risques.forEach(r=>{html+=`<div class="risk-item ${r.niveau}"><div class="risk-header"><div class="risk-name">${r.scenario}</div><span class="badge ${r.niveau}">${r.niveau}</span></div>${r.mesures&&r.mesures.length?`<ul class="risk-mesures">${r.mesures.slice(0,2).map(m=>`<li>${m}</li>`).join('')}</ul>`:''}</div>`;});
+      if(!risques.length)html+=`<div class="alert-bar success">Aucun risque identifié</div>`;
+      q4Content.innerHTML=html;
+    }
   }catch(e){console.error('[analyserB]',e)}
 }
 
@@ -3530,13 +3547,13 @@ function afficherA(data){
 function afficherB(data){
   document.getElementById('results-b').style.display='block';
   const q4=data.q4_risques_aipd;
-  document.getElementById('nb_risques').textContent=q4.nombre_risques||0;
-  document.getElementById('nb_critiques').textContent=q4.risques_critiques||0;
-  document.getElementById('nb_eleves').textContent=q4.risques_eleves||0;
+  const nbRisques=document.getElementById('nb_risques');if(nbRisques)nbRisques.textContent=q4.nombre_risques||0;
+  const nbCritiques=document.getElementById('nb_critiques');if(nbCritiques)nbCritiques.textContent=q4.risques_critiques||0;
+  const nbEleves=document.getElementById('nb_eleves');if(nbEleves)nbEleves.textContent=q4.risques_eleves||0;
   let risqueHtml='';
   (q4.risques_identifies||[]).forEach(r=>{risqueHtml+=`<div class="risk-item ${r.niveau}"><div class="risk-header"><div class="risk-name">${r.scenario}</div><span class="badge ${r.niveau}">${r.niveau} (${r.score})</span></div>${r.mesures&&r.mesures.length?`<ul class="risk-mesures">${r.mesures.map(m=>`<li>${m}</li>`).join('')}</ul>`:''}</div>`;});
   if(!risqueHtml)risqueHtml=`<div class="alert-bar success">Aucun risque identifié</div>`;
-  document.getElementById('risques_content')&&(document.getElementById('risques_content').innerHTML=risqueHtml);
+  const risquesContent=document.getElementById('risques_content');if(risquesContent)risquesContent.innerHTML=risqueHtml;
   if(q4.aipd){
     const aipd=q4.aipd;
     const ab=aipd.aipd_requise?'danger':'success';
@@ -4532,14 +4549,14 @@ function refreshSourceScopeUx(){
     const all=qalitasModule.value==='all';
     qalitasBtn.textContent=all?'Analyser toute la source':'Analyser ce module';
     if(qalitasHint)qalitasHint.textContent=all
-      ? "Mode démo validé : lecture globale QALITAS limitée aux modules stables."
+      ? "Lecture globale QALITAS limitée aux modules stables."
       : "Mode ciblé : choisissez un module QALITAS validé pour la démonstration.";
   }
   if(gmaoModule&&gmaoBtn){
     const all=gmaoModule.value==='all';
     gmaoBtn.textContent=all?'Analyser toute la source':'Analyser ce module';
     if(gmaoHint)gmaoHint.textContent=all
-      ? "Mode démo validé : lecture globale GMAO limitée aux modules stables."
+      ? "Lecture globale GMAO limitée aux modules stables."
       : "Mode ciblé : choisissez un module GMAO validé pour la démonstration.";
   }
 }
@@ -5354,7 +5371,16 @@ function goToAnalyseWithGmaoData(){if(!lastGmaoData)return;showSection('analyse'
 
 function goToAnalyseWithQalitasData(){if(!lastQalitasData)return;showSection('analyse');window.lastAgentAData=lastQalitasData.agent_a;if(lastQalitasData.agent_a)afficherA(lastQalitasData.agent_a);renderWorkspaceContexts();}
 function showDPOCockpit(){showSection('gouvernance');if(window.lastAgentDData){document.getElementById('results-d').style.display='block';afficherD(window.lastAgentDData);}}
-function toggleManualForm(){const w=document.getElementById('manual_form_wrapper');w.classList.toggle('open');}
+function toggleManualForm(){
+  const w=document.getElementById('manual_form_wrapper');
+  if(!w){alert('Wrapper introuvable');return;}
+  const parent=document.getElementById('section-analyse');
+  const parentDisplay=getComputedStyle(parent||document.body).display;
+  const computed=getComputedStyle(w).display;
+  console.log('parent section active:', parent?.classList.contains('active'), 'parent display:', parentDisplay, 'computed wrapper:', computed);
+  w.style.display=w.style.display==='block'?'none':'block';
+  if(w.style.display==='block'){w.style.outline='3px solid red';w.style.marginTop='10px';}
+}
 
 /* ─── Risques LATEST ANALYSIS ─── */
 async function loadLatestAnalysis(){
@@ -5368,35 +5394,40 @@ async function loadLatestAnalysis(){
     const meta=document.getElementById('q4_meta');
     if(meta)meta.textContent='Dernière analyse : '+(data.nom_traitement||'?')+' — '+(data.systeme||'')+' — '+(data.created_at||'');
     const q4Content=document.getElementById('q4_content');
-    if(q4Content&&data.agent_b){
-      const q4=data.agent_b.q4_risques_aipd||{};
-      const risques=q4.risques_identifies||[];
-      let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">`;
-      html+=`<div class="score-box"><div class="score-num">${q4.nombre_risques||0}</div><div class="score-lbl">Risques</div></div>`;
-      html+=`<div class="score-box"><div class="score-num" style="color:var(--danger)">${q4.risques_critiques||0}</div><div class="score-lbl">Critiques</div></div>`;
-      html+=`<div class="score-box"><div class="score-num" style="color:var(--warning)">${q4.risques_eleves||0}</div><div class="score-lbl">Élevés</div></div>`;
-      html+=`</div>`;
-      const aipd=q4.aipd||{};
-      if(aipd.aipd_requise)html+=`<div class="alert-bar danger" style="margin-bottom:10px"><strong>Étude d’impact OBLIGATOIRE</strong> — ${aipd.decision||''}</div>`;
-      risques.forEach(r=>{html+=`<div class="risk-item ${r.niveau}"><div class="risk-header"><div class="risk-name">${r.scenario}</div><span class="badge ${r.niveau}">${r.niveau}</span></div>${r.mesures&&r.mesures.length?`<ul class="risk-mesures">${r.mesures.slice(0,2).map(m=>`<li>${m}</li>`).join('')}</ul>`:''}</div>`;});
-      if(!risques.length)html+=`<div class="alert-bar success">Aucun risque identifié</div>`;
-      html+=renderDpoPrecedentBox(aipd.memoire_dpo,'la décision Étude d’impact');
-      html+=dpoDecisionBar({
-        targetType:'dpia',
-        targetId:(data.agent_a&&data.agent_a.q1_cartographie&&(data.agent_a.q1_cartographie.id_traitement||data.agent_a.q1_cartographie.nom_traitement))||'Étude d’impact-latest',
-        targetLabel:`Étude d’impact - ${data.nom_traitement||'Derniere analyse'}`,
-        sourceSystem:data.systeme||'',
-        sourceModule:data.module||'risques',
-        title:"Validation DPO - étude d’impact",
-        subtitle:aipd.aipd_requise?"Valider la décision d'impact de la dernière analyse":"Confirmer que l'analyse d'impact n'est pas requise",
-        primaryLabel:aipd.aipd_requise?"Valider l'analyse":'Confirmer non requise',
-        secondaryLabel:'Corriger le dossier',
-        primaryJustification:aipd.aipd_requise?'Validation DPO de la décision d’étude d’impact chargée depuis la dernière analyse.':'Validation DPO: étude d’impact non requise selon la dernière analyse.',
-        secondaryJustification:"Correction demandée sur l'analyse de risques chargée.",
-        evidence:{agent:'RGPD-Risques',aipd:aipd,risques:risques}
-      });
-      q4Content.innerHTML=html;
-    }
+      if(q4Content&&data.agent_b){
+        const q4=data.agent_b.q4_risques_aipd||{};
+        const risques=q4.risques_identifies||[];
+        let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">`;
+        html+=`<div class="score-box"><div class="score-num">${q4.nombre_risques||0}</div><div class="score-lbl">Risques</div></div>`;
+        html+=`<div class="score-box"><div class="score-num" style="color:var(--danger)">${q4.risques_critiques||0}</div><div class="score-lbl">Critiques</div></div>`;
+        html+=`<div class="score-box"><div class="score-num" style="color:var(--warning)">${q4.risques_eleves||0}</div><div class="score-lbl">Élevés</div></div>`;
+        html+=`</div>`;
+        const aipd=q4.aipd||{};
+        if(aipd.aipd_requise)html+=`<div class="alert-bar danger" style="margin-bottom:10px"><strong>Étude d’impact OBLIGATOIRE</strong> — ${aipd.decision||''}</div>`;
+        risques.forEach(r=>{html+=`<div class="risk-item ${r.niveau}"><div class="risk-header"><div class="risk-name">${r.scenario}</div><span class="badge ${r.niveau}">${r.niveau}</span></div>${r.mesures&&r.mesures.length?`<ul class="risk-mesures">${r.mesures.slice(0,2).map(m=>`<li>${m}</li>`).join('')}</ul>`:''}</div>`;});
+        if(!risques.length)html+=`<div class="alert-bar success">Aucun risque identifié</div>`;
+        html+=renderDpoPrecedentBox(aipd.memoire_dpo,'la décision Étude d’impact');
+        q4Content.innerHTML=html;
+        document.getElementById('results-b').style.display='block';
+        const ab=aipd.aipd_requise?'danger':'success';
+        let aipdHtml=`<div class="alert-bar ${ab}">${aipd.aipd_requise?'Étude d’impact OBLIGATOIRE':'Étude d’impact non requise'}</div>`;
+        aipdHtml+=`<div class="legale-item"><div class="legale-label">Statut</div><div class="legale-value">${aipd.aipd_realisee?'Réalisée':'Non réalisée'}</div></div>`;
+        aipdHtml+=`<div class="legale-item"><div class="legale-label">Décision</div><div class="legale-value">${aipd.decision||'—'}</div></div>`;
+        if(q4.residual_risk){
+          aipdHtml+=`<div class="score-row" style="margin-top:10px">
+            <div class="score-box"><div class="score-num">${q4.residual_risk.score_initial||0}</div><div class="score-lbl">Score initial</div></div>
+            <div class="score-box"><div class="score-num">${q4.residual_risk.score_residuel||0}</div><div class="score-lbl">Score résiduel</div></div>
+            <div class="score-box"><div class="score-num" style="font-size:14px;padding-top:4px">${q4.residual_risk.niveau_residuel||'—'}</div><div class="score-lbl">Niveau résiduel</div></div>
+          </div>`;
+          aipdHtml+=`<div class="alert-bar ${q4.residual_risk.niveau_residuel==='Critique'?'danger':q4.residual_risk.niveau_residuel==='Eleve'?'warning':'success'}" style="margin-top:8px">${q4.residual_risk.decision_residuelle||''}</div>`;
+        }
+        if((q4.mesures_prioritaires||[]).length){
+          aipdHtml+=`<div style="margin-top:8px;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Mesures prioritaires</div><ul style="padding-left:16px;font-size:12px;color:var(--ink-2)">${q4.mesures_prioritaires.slice(0,5).map(m=>`<li>${escHtml(m.mesure||'—')} <span class="text-muted">(${escHtml(m.priorite||'—')})</span></li>`).join('')}</ul>`;
+        }
+        if(aipd.raisons_declenchement&&aipd.raisons_declenchement.length){aipdHtml+=`<div style="margin-top:8px;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Raisons</div><ul style="padding-left:16px;font-size:12px;color:var(--ink-2)">${aipd.raisons_declenchement.map(r=>`<li style="margin-bottom:3px">${r}</li>`).join('')}</ul>`;}
+        aipdHtml+=renderDpoPrecedentBox(aipd.memoire_dpo,'la décision Étude d’impact');
+        document.getElementById('aipd_content').innerHTML=aipdHtml;
+      }
     window.lastAgentBData=data.agent_b;window.lastAgentAData=data.agent_a;if(data.agent_d)window.lastAgentDData=data.agent_d;
     if(data.agent_a&&data.agent_a.q1_cartographie)globalTraitement=data.agent_a.q1_cartographie;
     renderWorkspaceContexts();

@@ -131,7 +131,7 @@ class GmaoConnector:
     def _fetch_login_ids(self) -> tuple:
         company_id = site_id = ""
         company_endpoints = ["/GetCompanies", "/Account/GetCompanies"]
-        site_endpoints = ["/GetSiteByCompany", "/Account/GetSites"]
+        site_endpoints = ["/Account/GetSiteByCompany", "/GetSiteByCompany", "/Account/GetSites"]
 
         def _try_list(endpoints, params=None):
             last_exc = None

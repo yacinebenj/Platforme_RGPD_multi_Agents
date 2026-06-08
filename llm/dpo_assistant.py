@@ -179,13 +179,15 @@ def _question_targets_latest_treatment(question: str) -> bool:
         "dernier traitement", "derniere traitement", "dereniere traitement",
         "latest treatment", "last treatment", "dernier dossier", "derniere dossier",
         "ce traitement", "ce dossier", "last one", "latest one",
+        "dernier analyse", "derniere analyse", "cette analyse", "cet analyse",
+        "derniere analyse importee", "dernier document importe",
     ]) or ("dernier" in q and "traitement" in q) or ("derniere" in q and "traitement" in q) or ("dereniere" in q and "traitement" in q)
 
 
 def _question_asks_for_summary(question: str, family: str) -> bool:
     q = _norm(question)
     keywords = {
-        "risk": ["plus risques", "plus risqués", "risques", "top risk", "most risky"],
+        "risk": ["plus risques", "plus risqués", "risques", "top risk", "most risky", "score", "scores", "vigilance"],
         "cnil": ["cnil", "72h", "notification", "notifier"],
         "proofs": ["preuves", "proofs", "valider", "validation", "justificatif"],
         "compliance": ["conformite", "compliance", "violations", "ecarts", "qalityas", "gmao"],
@@ -397,9 +399,111 @@ def _deterministic_proof_answer(question: str, entities: dict[str, Any]) -> tupl
     return answer, ["treatments", "rgpd_register", "dpo_validations"]
 
 
+def _detailed_risk_answer(question: str, entities: dict[str, Any]) -> tuple[str, list[str]] | None:
+    treatment_row = _latest_treatment_row(entities)
+    if not treatment_row:
+        return None
+    name = treatment_row.get("nom_traitement") or treatment_row.get("id_traitement") or "Dernier traitement"
+    systeme = treatment_row.get("systeme") or "N/A"
+    score = treatment_row.get("score_conformite")
+    violations = treatment_row.get("nb_violations") or 0
+    risk = treatment_row.get("niveau_risque") or "N/A"
+    output = _safe_json(treatment_row.get("output_json"), {}) or {}
+    q2 = output.get("q2_conformite", {}) or {}
+    # Build profile line
+    profile_parts = []
+    for item in _safe_json(treatment_row.get("input_json"), {}).get("donnees", []):
+        profile = item.get("profil") or item.get("categorie") or ""
+        if profile and profile not in profile_parts:
+            profile_parts.append(profile)
+    profile_line = f" ({', '.join(profile_parts)})" if profile_parts else ""
+    # Extract detailed Agent A scores
+    score_vigilance = q2.get("score_vigilance") or treatment_row.get("score_vigilance")
+    score_conformite_globale = q2.get("score_conformite_globale") or treatment_row.get("score_conformite_globale")
+    score_documentaire = q2.get("score_documentaire") or treatment_row.get("score_documentaire")
+    score_normalise = q2.get("score_normalise")
+    lines = [
+        f"Traitement : {name}{profile_line}",
+        f"Systeme     : {systeme}",
+        f"Niveau risque : {risk}",
+        f"Violations     : {violations}",
+    ]
+    if score_vigilance is not None:
+        lines.append(f"Score vigilance     : {score_vigilance}")
+    if score_normalise is not None:
+        lines.append(f"Score normalise     : {score_normalise}")
+    if score_documentaire is not None:
+        lines.append(f"Score documentaire  : {score_documentaire}")
+    if score_conformite_globale is not None:
+        lines.append(f"Score conformite    : {score_conformite_globale}")
+    elif score is not None:
+        lines.append(f"Score conformite    : {score}")
+    # Risk scenarios from output_json (Agent B risk analysis)
+    q4 = output.get("q4_risques", {}) or {}
+    scenarios = q4.get("scenarios", []) or q4.get("risques", []) or []
+    if not scenarios:
+        scenarios = _safe_json(treatment_row.get("risk_scenarios"), [])
+    if scenarios:
+        lines.append("\nScenarios de risque detailles:")
+        for s in scenarios[:8]:
+            rid = s.get("id_risque") or s.get("id") or s.get("code") or ""
+            label = s.get("libelle") or s.get("label") or s.get("nom") or ""
+            gravite = s.get("gravite") or s.get("severity") or ""
+            vraisemblance = s.get("vraisemblance") or s.get("likelihood") or ""
+            mitigation = s.get("mitigation") or ""
+            residual = s.get("risque_residuel") or s.get("residual")
+            parts = [rid, label] if rid or label else []
+            if gravite:
+                parts.append(f"gravite={gravite}")
+            if vraisemblance:
+                parts.append(f"vraisemblance={vraisemblance}")
+            if mitigation:
+                parts.append(f"mitigation={mitigation}")
+            if residual is not None:
+                parts.append(f"residuel={residual}")
+            lines.append(f"  - {', '.join(parts)}")
+    # DPIA / AIPD info
+    dpia_rows = crud.get_dpia_dossiers(limit=10)
+    dpia_for_treatment = [
+        d for d in dpia_rows
+        if _norm(d.get("nom_traitement") or "") == _norm(name)
+    ]
+    if dpia_for_treatment:
+        d = dpia_for_treatment[0]
+        lines.append(
+            f"\nAIPD: decision={d.get('aipd_decision') or 'N/A'}, "
+            f"statut={d.get('statut') or 'N/A'}"
+        )
+    # Violations detail from q2
+    violations_list = q2.get("violations", []) or q2.get("points_documentaires", [])
+    if violations_list:
+        lines.append("\nViolations / ecarts:")
+        for v in violations_list[:5]:
+            rid = v.get("id_regle") or ""
+            msg = v.get("message") or v.get("description") or ""
+            art = v.get("article") or ""
+            rec = v.get("recommandation") or v.get("recommendation") or ""
+            label = f"{rid} ({art})" if rid and art else rid or art
+            line = f"  - {label}: {msg}" if msg else f"  - {label}"
+            lines.append(line)
+            if rec:
+                lines.append(f"    -> {rec}")
+    answer = (
+        "Analyse detaillee du dernier traitement:\n\n"
+        + "\n".join(lines)
+        + "\n\nValidation finale: cette analyse est basee sur les donnees enregistrees dans la plateforme "
+        "et doit etre confirmee par le DPO."
+    )
+    return answer, ["treatments", "risk_reviews", "dpia_dossiers"]
+
+
 def _deterministic_risk_answer(question: str, entities: dict[str, Any]) -> tuple[str, list[str]] | None:
     if not _question_asks_for_summary(question, "risk"):
         return None
+    if _question_targets_latest_treatment(question):
+        detailed = _detailed_risk_answer(question, entities)
+        if detailed:
+            return detailed
     rows = _dedupe_rows(_valid_treatment_rows(_filter_system(crud.get_treatments(limit=20), entities)), ["nom_traitement", "systeme"])
     scored = []
     for row in rows:
@@ -801,20 +905,49 @@ def generate_assistant_answer(question: str, history: list[str] | None = None, u
     intent = _maybe_override_intent(question, predict_assistant_intent(question, history=history))
     entities = extract_entities(working_question)
     if intent["label"] == "out_of_scope":
-        return {
-            "answer": REFUSAL,
-            "scope": "out_of_scope",
-            "intent": intent,
-            "entities": entities,
-            "sources": [],
-        }
+        # Previously a hard refusal. Now we let the LLM try to answer.
+        # REFUSAL can still be used later if no data is found.
+        pass
 
     platform_context, platform_sources = build_platform_context(intent["label"], entities)
     rag_context, rag_sources = retrieve_rag_context(working_question, intent["label"])
     deterministic = _deterministic_answer(question, intent["label"], entities)
     if deterministic:
-        answer, forced_sources = deterministic
+        answer_text, forced_sources = deterministic
         merged_sources = sorted(set(platform_sources + forced_sources + ([f"RAG:{src}" for src in rag_sources] if rag_sources else [])))
+        groq_deterministic_system = (
+            "Tu es l'assistant DPO interne de la plateforme RGPD de TIM Consulting.\n"
+            "Tu vas recevoir des informations extraites de la base de données par le moteur interne de la plateforme.\n"
+            "TON TRAVAIL: réécrire ces informations en français naturel et fluide, sans rien ajouter.\n"
+            "REGLES:\n"
+            "- N'invente AUCUNE donnée. Utilise UNIQUEMENT ce qui est dans le texte fourni.\n"
+            "- Reformule de manière claire et professionnelle.\n"
+            "- Structure avec des titres Markdown, listes à puces, tableaux si pertinent.\n"
+            "- Garde tous les chiffres, scores, identifiants exactement comme fournis.\n"
+            "- Termine par: ✅ Validation finale: le DPO.\n"
+            "- Réponds en français."
+        )
+        groq_deterministic_prompt = (
+            f"Question DPO:\n{question}\n\n"
+            f"Informations extraites de la plateforme (source fiable):\n{answer_text}\n\n"
+            f"RAG:\n{rag_context or 'Aucun extrait RAG disponible.'}\n\n"
+            f"Consigne: réécris ces informations de manière naturelle et professionnelle en français. "
+            f"N'ajoute rien qui ne figure pas dans les informations fournies."
+        )
+        try:
+            client = _get_groq()
+            groq_det_response = client.chat.completions.create(
+                model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                messages=[
+                    {"role": "system", "content": groq_deterministic_system},
+                    {"role": "user", "content": groq_deterministic_prompt},
+                ],
+                max_tokens=1000,
+                temperature=0.3,
+            )
+            answer = groq_det_response.choices[0].message.content.strip()
+        except Exception:
+            answer = answer_text
         return {
             "answer": answer,
             "scope": "platform",
@@ -825,13 +958,22 @@ def generate_assistant_answer(question: str, history: list[str] | None = None, u
 
     system_prompt = (
         "Tu es l'assistant DPO interne de la plateforme RGPD de TIM Consulting.\n"
-        "Tu reponds uniquement aux questions liees a la plateforme, aux analyses, traitements, "
-        "risques, incidents, DSAR, AIPD, consentements, actions, preuves, validations, rapports, "
-        "QALITAS, GMAO et au RGPD.\n"
-        "Si la question est hors perimetre, refuse poliment.\n"
-        "Utilise uniquement le contexte fourni. N'invente pas de donnees.\n"
-        "Tu ne prends jamais de decision juridique finale: tu fournis une aide a la decision a valider par le DPO.\n"
-        "Reponds en francais, de maniere claire et operationnelle."
+        "Tu as accès aux tables suivantes du moteur de données (nom de la table, colonnes importantes) :\n"
+        "- treatments: id_traitement, nom_traitement, systeme, niveau_risque, nb_violations, score_conformite\n"
+        "- rgpd_register: id_registre, nom_traitement, systeme, base_legale, risk_level, missing_info\n"
+        "- incident_reviews: id_incident, nom_traitement, systeme, qualification, notifier_cnil\n"
+        "- dsars, dpo_validations, actions, ... (mentionner les tables principales)\n"
+        "Utilise ces noms de colonnes lorsqu'ils sont pertinents dans la réponse.\n"
+        "Adopte le style suivant pour chaque réponse :\n"
+        "- Titre en gras (Markdown **Titre**),\n"
+        "- Listes à puces pour les éléments,\n"
+        "- Tableau Markdown si plusieurs lignes d'information,\n"
+        "- Indique la(s) source(s) entre crochets, ex. [treatments], [RAG:RGPD].\n"
+        "- Termine toujours par la phrase courte : ✅ Validation finale : le DPO.\n"
+        "Si la question est hors périmètre, refuse poliment mais suggère les informations manquantes (ex. identifiant de la personne, module, etc.).\n"
+        "Utilise uniquement le contexte fourni. N'invente pas de données.\n"
+        "Tu ne prends jamais de décision juridique finale: tu fournis une aide à la décision à valider par le DPO.\n"
+        "Réponds en français, de manière claire et opérationnelle."
     )
     user_prompt = f"""Question DPO:
 {question}

@@ -268,6 +268,15 @@ def startup_event():
         except Exception as exc:
             print(f"[REALTIME] Auto-start skipped: {exc}")
 
+    # Pre-load RAG model eagerly so the first /assistant-dpo/chat call
+    # does not time out waiting for SentenceTransformer to download.
+    try:
+        from llm.dpo_assistant import retrieve_rag_context
+        retrieve_rag_context("initialisation", "governance_summary")
+        print("[RAG] Model pre-loaded at startup.")
+    except Exception as exc:
+        print(f"[RAG] Pre-load skipped: {exc}")
+
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -961,6 +970,57 @@ async def scan_unstructured(
 
 
 
+def _infer_treatment_from_raw_text(raw_text: str, doc_type: str = "") -> dict:
+    if not raw_text or not raw_text.strip():
+        return {}
+    try:
+        from groq import Groq
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        prompt = f"""Tu es un expert RGPD. Analyse le texte du document ci-dessous et determine ses caracteristiques RGPD.
+
+Texte du document:
+{raw_text[:2500]}
+
+Type de fichier: {doc_type}
+
+Reponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans explication.
+Infere ces champs:
+- base_legale: string parmi ["consentement","contrat","obligation_legale","interet_legitime","mission_publique"] ou false
+- finalite: string court decrivant la finalite du traitement
+- donnees_sensibles: bool
+- duree_conservation_definie: bool
+- duree_conservation: string (ex: "5 ans", "10 ans", "3 ans apres fin contrat") ou "A definir"
+- mesures_securite: liste de strings (ex: ["chiffrement","controle_acces","signature_electronique"]) ou liste vide
+- privacy_by_design: bool
+- processus_droits_personnes: bool
+- information_personnes_concernees: bool
+- transfert_etranger: bool
+- consentement_valide: bool
+- type_document: string court decrivant le type de document detecte (ex: "contrat de travail", "facture", "courrier RH", "document administratif")
+
+Sois intelligent. Exemples:
+- Contrat de travail → base_legale="contrat", finalite="Gestion administrative des employes", duree_conservation="5 ans apres fin contrat"
+- Facture → base_legale="obligation_legale", finalite="Gestion comptable et facturation", duree_conservation="10 ans"
+- Document RH → base_legale="contrat", finalite="Gestion des ressources humaines"
+
+Ne devine pas si tu n'es pas sur, mets false. JSON uniquement:"""
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+            temperature=0.1
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        return json.loads(raw.strip())
+    except Exception as e:
+        print(f"[LLM] Document inference failed: {e}")
+        return {}
+
+
 def _build_unstructured_traitement_input(
     scan_result: dict,
     systeme: str | None = None,
@@ -1024,41 +1084,46 @@ def _build_unstructured_traitement_input(
         f"{scan_result.get('nb_findings', 0)} donnee(s) detectee(s) via {scan_result.get('extraction_method') or 'scan'}."
     )
 
-    return {
+    raw_text = (scan_result.get("raw_text") or "")[:2500]
+    inferred = _infer_treatment_from_raw_text(raw_text, doc_type=scan_result.get("file_type", ""))
+    if inferred:
+        print(f"[LLM] Inferred fields from document: base_legale={inferred.get('base_legale')}, type={inferred.get('type_document')}")
+
+    treatment = {
         "id_traitement": treatment_id,
-        "nom_traitement": f"Analyse documentaire - {base_filename}",
+        "nom_traitement": inferred.get("type_document", f"Analyse documentaire - {base_filename}"),
         "systeme": system_label,
         "module": module_label,
         "responsable": "DPO TIM Consulting",
         "description": description,
         "donnees_collectees": detected_fields,
         "categories_donnees": sorted(categories),
-        "donnees_sensibles": sensitive_like,
-        "finalite": finalite,
-        "finalite_definie": True,
-        "base_legale": False,
-        "consentement_valide": False,
+        "donnees_sensibles": inferred.get("donnees_sensibles", sensitive_like),
+        "finalite": inferred.get("finalite", finalite),
+        "finalite_definie": bool(inferred.get("finalite", True)),
+        "base_legale": inferred.get("base_legale", False),
+        "consentement_valide": inferred.get("consentement_valide", False),
         "consentement_retire": False,
         "type_relation": "document_importe",
         "personnes_concernees": person_names if person_names else [relation],
         "destinataires": [],
         "transfert_etranger": False,
         "garanties_specifiques": False,
-        "duree_conservation": "A definir",
-        "duree_conservation_definie": False,
+        "duree_conservation": inferred.get("duree_conservation", "A definir"),
+        "duree_conservation_definie": inferred.get("duree_conservation_definie", False),
         "duree_depassee": False,
-        "donnees_minimisees": False if len(detected_fields) > 2 else True,
+        "donnees_minimisees": inferred.get("donnees_minimisees", False if len(detected_fields) > 2 else True),
         "respect_vie_privee": True,
-        "mesures_securite": ["controle_acces"] if personal_like else [],
+        "mesures_securite": inferred.get("mesures_securite", ["controle_acces"] if personal_like else []),
         "chiffrement_actif": False,
         "tests_securite_reguliers": False,
         "controle_acces_physique": False,
-        "privacy_by_design": False,
+        "privacy_by_design": inferred.get("privacy_by_design", False),
         "privacy_by_default": False,
-        "processus_droits_personnes": False,
-        "information_personnes_concernees": False,
+        "processus_droits_personnes": inferred.get("processus_droits_personnes", False),
+        "information_personnes_concernees": inferred.get("information_personnes_concernees", False),
         "modalites_droits_accessibles": False,
-        "collecte_indirecte": True,
+        "collecte_indirecte": not bool(inferred.get("information_personnes_concernees", False)),
         "information_collecte_indirecte": False,
         "consentement_collecte_indirecte": False,
         "information_transfert_fournie": False,
@@ -1070,7 +1135,7 @@ def _build_unstructured_traitement_input(
         "notification_72h": False,
         "notification_personnes": False,
         "violation_documentee": False,
-        "risque_eleve": sensitive_like,
+        "risque_eleve": inferred.get("donnees_sensibles", sensitive_like),
         "aipd_realisee": False,
         "mise_en_production": False,
         "analyse_risque_avant_production": False,
@@ -1089,6 +1154,18 @@ def _build_unstructured_traitement_input(
         "imported_document_name": scan_result.get("filename"),
         "imported_document_type": scan_result.get("file_type"),
     }
+
+    if inferred and inferred.get("base_legale"):
+        treatment["base_legale"] = inferred["base_legale"]
+        treatment["description"] = (
+            f"Analyse automatique d'un fichier {scan_result.get('file_type') or 'document'}: "
+            f"{inferred.get('type_document', 'document')}. "
+            f"Base legale detectee: {inferred.get('base_legale')}. "
+            f"Finalite: {inferred.get('finalite', finalite)}. "
+            f"{scan_result.get('nb_findings', 0)} donnee(s) personnelle(s) detectee(s)."
+        )
+
+    return treatment
 
 
 CORRECTION_PROOF_HINTS = {

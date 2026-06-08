@@ -1,5 +1,69 @@
+import json
+import os
+import re
+
+from dotenv import load_dotenv
 from rules.severity import determiner_niveau_risque
 from database import crud
+
+load_dotenv("key.env")
+
+def _get_groq():
+    try:
+        from groq import Groq
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            return None
+        return Groq(api_key=api_key)
+    except Exception:
+        return None
+
+INFER_INCIDENT_PROMPT = """Tu es un expert RGPD specialise dans la gestion des incidents de securite.
+A partir de la description d'un incident de donnees personnelles, infere les champs suivants.
+Reponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans explication.
+
+Description de l'incident: {description}
+
+Infere ces champs:
+- type_incident: string parmi ["acces_non_autorise","divulgation","fuite","exposition","phishing","perte_terminal","alteration","modification","corruption","suppression_indue","indisponibilite","ransomware","blocage","panne","destruction","autre"]
+- gravite_incident: int de 1 (faible) a 5 (critique) selon l'impact potentiel
+- nombre_personnes_affectees: int, estime le nombre de personnes concernees
+- donnees_sensibles_impliquees: bool, true si donnees de sante, biometriches, financieres, ou intimes
+- donnees_chiffrees: bool, true si les donnees etaient chiffrees/protegees
+- donnees_affectees: liste de strings identifiant les types de donnees concernees
+
+Regles:
+- Sois conservateur: si le texte ne mentionne pas clairement un chiffre, estime 1
+- gravite_incident: 1 = pas d'impact, 3 = impact significatif, 5 = impact critique
+- type_incident: choisis le plus proche parmis la liste
+JSON uniquement:"""
+
+def infer_incident_from_description(description: str) -> dict:
+    if not description or not description.strip():
+        return {}
+    client = _get_groq()
+    if not client:
+        return {}
+    try:
+        prompt = INFER_INCIDENT_PROMPT.format(description=description.strip())
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.1
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        if match:
+            raw = match.group(0)
+        inferred = json.loads(raw)
+        return {k: v for k, v in inferred.items() if v not in (None, "", [])}
+    except Exception:
+        return {}
 
 SCENARIOS_RISQUES = [
     {
@@ -662,10 +726,26 @@ def run_q6(incident, context=None):
             "incident_declare": False,
             "message": "Aucun incident declare pour ce traitement"
         }
+    incident = dict(incident)
+    description = (incident.get("description") or "").strip()
+    has_inferred = False
+    if description:
+        has_structured_data = bool(
+            incident.get("type_incident")
+            or incident.get("gravite_incident", 0) > 1
+            or incident.get("nombre_personnes_affectees", 0) > 0
+        )
+        if not has_structured_data:
+            inferred = infer_incident_from_description(description)
+            if inferred:
+                for key, value in inferred.items():
+                    if value not in (None, "", [], {}, False, 0):
+                        incident[key] = value
+                has_inferred = True
     qualification, assessment = qualifier_incident(incident, context)
     notification = decider_notification(incident, qualification, assessment)
     dossier = generer_dossier_incident(incident, qualification, notification, assessment)
-    return {
+    result = {
         "incident_declare": True,
         "qualification": qualification,
         "evaluation_risque_incident": assessment,
@@ -673,6 +753,9 @@ def run_q6(incident, context=None):
         "dossier_incident": dossier,
         "evidence": _build_incident_evidence(context or {}, incident)
     }
+    if has_inferred:
+        result["inference"] = {"source": "groq_llm", "description_originale": description}
+    return result
 
 def run_agent_b(traitement, agent_a_output, incident=None):
     context = _load_inventory_context(traitement, agent_a_output)

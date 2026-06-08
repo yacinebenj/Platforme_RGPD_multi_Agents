@@ -129,6 +129,7 @@ class UnstructuredScanResult:
             "criticite_globale": self.criticite_globale,
             "types_detectes": self.types_detectes,
             "nb_findings": len(self.findings),
+            "raw_text": self.raw_text,
             "findings": [
                 {
                     "pattern": f.pattern_name,
